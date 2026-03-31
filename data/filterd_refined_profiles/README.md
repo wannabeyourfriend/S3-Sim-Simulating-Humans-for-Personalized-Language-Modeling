@@ -1,3 +1,4 @@
+@yaml/ -> You can use simple script to convert jsonl into yaml files.
 # summary_refined_profiles_us.jsonl
 
 JSONL file, one line per persona (62 total).

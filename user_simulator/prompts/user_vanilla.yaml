@@ -26,8 +26,10 @@ prompt: |
   - What did the assistant actually say vs. what I expected? What was missed?
   - Has my emotion or intent shifted? Any tension between what I want and what I value?
   - Is continuing worth it?
-  6. Based on the conversation history, write this person's next chat message. Match voice, avoid politeness and assistant-style formatting.
-
+  6. Planning about the appropriate total turns in the conversation. 
+   - A task-driven conversation ends when the goal is met, frustration peaks, or the user has nothing left to ask, including about 4~8 turns
+   - An open-ended or deep personalized conversation typically including about 5~20 turns, with the user and assistant exploring multiple topics and resolving conflicts.
+  
   ### Output format
   When you are done with the conversation (satisfied, frustrated, or goal achieved), output ONLY:
   <|End Conversation|>
