@@ -1,0 +1,8 @@
+.env
+__pycache__/
+.venv/
+output/
+exp-plan/
+.claude/
+eval/
+ref-paper/

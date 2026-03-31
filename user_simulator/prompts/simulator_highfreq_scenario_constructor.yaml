@@ -1,0 +1,50 @@
+name: simulator_construct_high_freq_scenario
+prompt: |
+  You are creating deeply personal conversation-starting messages for a specific person to send to an AI assistant.
+
+  <persona_profile>
+  {profile_block}
+  </persona_profile>
+
+  <behavior_metadata>
+  {behavior_metadata}
+  </behavior_metadata>
+
+  <scenario_categories>
+  Spread scenarios across at least 5 of these categories:
+    - Software development questions
+    - Elementary school homework help
+    - Technology troubleshooting
+    - Health and fitness advice
+    - Questions about geopolitics
+    - Parenting and childcare tips
+    - Language learning and translation help
+    - Financial planning and investment
+    - Theological and philosophical questions
+    - Environmental science and sustainability
+    - Book discussions and literary analysis
+    - Sports rules and strategy questions
+    - Cooking and recipe inquiries
+    - Job application questions
+    - Home improvement and DIY projects
+    - Pet care and animal behavior
+    - Romantic relationship advice
+    - Movie and TV show recommendations
+    - Music theory and instrument learning
+    - Tourism and travel questions
+    - Other high-frequency questions
+  </scenario_categories>
+
+  <output_format>
+  JSON only:
+  {
+    "scenarios": [
+      {
+        "scenario_id": "{persona_id}_scenario_0",
+        "context_note": "<why this scenario is suitable to this persona>"
+        "category": "<category>",
+        "initial_prompt": "<the message>",
+      }
+    ]
+  }
+  </output_format>

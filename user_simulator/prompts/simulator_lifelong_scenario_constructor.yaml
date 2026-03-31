@@ -1,0 +1,67 @@
+name: simulator_scenario
+prompt: |
+  You are creating deeply personal conversation-starting messages for a specific person to send to an AI assistant.
+
+  <profile_summary>
+  {profile_summary}
+  </profile_summary>
+
+  <behavior_metadata>
+  {behavior_metadata}
+  </behavior_metadata>
+
+  ## Narrative Instructions
+  The full set of scenarios must read as a coherent life story, not isolated topics. Follow these three rules before selecting categories:
+  1. Erikson stage anchoring
+    - Identify the persona's current psychosocial stage from their profile (e.g. Generativity vs. Stagnation for mid-life; Integrity vs. Despair for late life).
+    - At least two scenarios must directly express the tension of that stage, embedded in the situation, not stated as a label.
+  2. Life phase distribution. Spread scenarios across at least two distinct phases of the persona's life:
+    - Past-facing: a formative decision or unresolved pattern from earlier years
+    - Present-tense: the active struggle or transition happening now
+    - Forward-looking: an anticipated change the persona can already feel coming
+    Each phase must be represented by at least one scenario.
+  3. Narrative echo
+     At least one pair of scenarios must share a psychological thread, a belief, fear, or relational pattern that appears in different contexts across time. Mark the connection in context_note so it is traceable.
+
+  <scenario_categories>
+  Spread scenarios across at least 5 of these categories. Each category includes a generation instruction drawn from psychological theory, use it to shape the emotional texture of the initial_prompt, not to state the theory openly.
+  - emotional_support: processing difficult emotions, coping with stress, dealing with change
+    → Anchor in affect regulation theory: the prompt should express a feeling the person cannot yet name, not a problem they are asking to be solved.
+  - relationship: navigating family dynamics, friendships, workplace relationships, conflicts
+    → Draw on attachment theory: the tension should reflect the persona's underlying relational pattern (need for closeness, fear of dependency, ambivalence, etc.).
+  - long_term_planning: life transitions, retirement, relocation, major decisions
+    → Frame as a prospective regret question: the person is weighing two futures, not asking for a plan. At least one option must feel like a loss.
+  - career_transition: job changes, skill development, professional identity shifts
+    → Treat as an identity disruption (Erikson): the real question is not "what job" but "who am I if I change this."
+  - health_decision: medical choices, lifestyle changes, mental health, aging concerns
+    → Ground in the person's relationship with their own body across time, how it has changed, what it now demands, what they grieve about it.
+  - identity_values: questioning beliefs, cultural tensions, personal growth, moral dilemmas
+    → Use the narrative identity frame: the scenario should surface a contradiction between the self the person has always presented and what they actually feel.
+  - financial: budgeting, investment decisions, financial anxiety, generational wealth
+    → Connect to family-of-origin money scripts or class transition anxiety, the numbers are never just numbers.
+  - grief_loss: bereavement, loss of identity/role, nostalgia, letting go
+    → Apply Stroebe's dual-process model: the scenario sits at the oscillation point between loss-orientation (dwelling) and restoration-orientation (moving on).
+  - parenting_family: child-rearing decisions, elder care, family obligations
+    → Surface the intergenerational transmission layer: the person is often either repeating or actively refusing a pattern they received.
+  - creative_expression: artistic pursuits, hobby decisions, self-expression, legacy projects
+    → Frame as a legacy question for older personas, a permission question for younger ones: what does making this thing mean about who they are allowed to be?
+  - life_transition: major life-stage crossings — empty nest, retirement threshold, divorce, immigration, second-chapter reinvention
+    → Use Bridges' transition model: the scenario lives in the "neutral zone", the old structure has ended but the new one has not yet formed. The person is neither here nor there, and that disorientation is the prompt.
+  - intergenerational: tensions or renegotiations with parents, adult children, or the generation the persona belongs to culturally
+    → Draw on Bowen family systems theory: the scenario should involve a moment where differentiation is at stake — the pull to fuse with or cut off from a family pattern, versus finding a third way.
+  - other: any other topic that fits the persona's profile
+  </scenario_categories>
+
+  <output_format>
+  JSON only:
+  {
+    "scenarios": [
+      {
+        "scenario_id": "{persona_id}_scenario_0",
+        "context_note": "<why this scenario is suitable to this persona>"
+        "category": "<category>",
+        "initial_prompt": "<the message>",
+      }
+    ]
+  }
+  </output_format>
