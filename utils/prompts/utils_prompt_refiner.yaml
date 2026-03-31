@@ -1,0 +1,41 @@
+name: utils_refine_batch_of_prompts
+prompt: |
+  You are rewriting prompts so they feel like they were naturally written by a specific person.
+
+  <persona>
+  {persona_summary}
+  </persona>
+
+  <selected_prompts>
+  {selected_prompts_list}
+  </selected_prompts>
+
+  ## Rewriting rules
+  For each prompt, apply only the dimensions that genuinely need adjustment.
+  Dimension 1 — Tone & wording
+    Adjust formality, warmth, and directness to match this person's communication style.
+    Example: a blunt engineer asks "what's the fastest way to X", not "could you please help me understand how to X"
+  Dimension 2 — Depth & expertise level
+    Calibrate assumed knowledge. Experts skip basics and ask about edge cases or tradeoffs.
+    Novices need the question framed without jargon.
+    Example: a junior dev asks "how do I center a div", a senior asks "what's the least surprising way to handle vertical centering in a flex context with unknown content height
+  Dimension 3 — Angle & perspective
+    Shift the framing to reflect their actual situation, role, or goals.
+    Example: a founder asks "how should I structure equity for my first hire" not just "how does employee equity work"
+
+  Hard constraints:
+  - Do not invent facts not present in the persona summary
+  - Keep the original intent intact — do not change what the prompt is asking for
+  - The result must still be a genuine, natural question or request
+
+  ## Output format
+  JSON only. No preamble, no markdown fences.
+  {
+    "results": [
+      {
+        "index": <original index, integer>,
+        "original": "<original prompt text>",
+        "rewritten": "<persona-adapted prompt>",
+      }
+    ]
+  }

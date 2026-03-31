@@ -1,0 +1,65 @@
+name: utils_refine_profile
+prompt: |
+  You are a behavioral scientist enriching a synthetic persona profile for a research study. Your task is to infer structured behavioral metadata from the profile, then rewrite the summary to be more grounded and specific.
+  Given the persona profile below, produce two outputs:
+  1. A behavioral_metadata object capturing interaction-style dimensions that are not explicitly stated but can be reliably inferred from the summary, attributes, and fingerprint.
+  2. A refined_summary that incorporates the inferred metadata naturally. The refined summary should read as a first-person narrative (same voice as the original) but be more specific and behaviorally grounded.
+
+  <persona_summary>
+  {profile_summary}
+  </persona_summary>
+
+  <persona_attributes>
+  {profile_attributes}
+  </persona_attributes>
+
+  ## Behavioral dimensions
+  For each dimension, choose the most plausible value based on the profile. If genuinely ambiguous, pick the most likely and note low confidence.
+  - age_band: one of [18-, 18-24, 25-34, 35-44, 45-54, 55-64, 65+]
+  - specialization: primary professional or knowledge domain (e.g., "ux", "environmental_engineering", "retail_management")
+  - long_term_goal: the primary life goal or objective of this person, e.g., "save enough money before retirement to live in a comfortable and healthy way", "create a successful business that contributes to the community"
+  - tone_pref: one of [formal, neutral, playful, blunt, warm]
+  - multi_intent_rate: one of [single, occasional_multi, frequent_multi] — how often this person packs multiple questions into one message
+  - query_length_pref: one of [terse, short, medium, detailed] — typical message length when asking questions
+  - ai_familiarity: one of [first_time, beginner, comfortable, power_user] — how experienced they are with AI assistants
+  - interaction_frequency: one of [one_off, occasional, regular, daily]
+  - follow_up_tendency: one of [one_and_done, clarifying, deep_dive, tangential] — what they do after getting an answer
+  - creativity_vs_precision: one of [highly_creative, balanced, precision_focused]
+  - time_sensitivity: one of [relaxed, somewhat_urgent, urgent]
+  - collaboration_context: one of [solo, small_team, large_org, public_community]
+  - error_tolerance: one of [zero_tolerance, low, moderate, high] — how they react to imperfect answers
+  - feedback_style: one of [silent, gentle_suggestion, direct_correction, blunt_criticism]
+  - context_retention_expectation: one of [single_shot, within_session, multi_session] — whether they expect the assistant to remember prior context
+  - autonomy_level: one of [hand_holding, guided, moderate_autonomy, full_autonomy] — how much they want the assistant to decide vs. ask
+  - detail_orientation: one of [answer_only, key_points, moderate_detail, exhaustive_detail]
+  - explanation_depth: one of [answer_only, brief_rationale, step_by_step, deep_conceptual]
+  - primary_domain: one of [writing, coding, research, business, health, education, creative, finance, engineering, general]
+  - typical_scenario: one of [work_task, personal_project, learning, problem_solving, brainstorming, venting, routine_query]
+
+  ## Output format
+  Respond with a JSON object and nothing else:
+  {
+    "behavioral_metadata": {
+      "age_band": "<value>",
+      "specialization": "<value>",
+      "long_term_goal": "<value>",
+      "tone_pref": "<value>",
+      "multi_intent_rate": "<value>",
+      "query_length_pref": "<value>",
+      "ai_familiarity": "<value>",
+      "interaction_frequency": "<value>",
+      "follow_up_tendency": "<value>",
+      "creativity_vs_precision": "<value>",
+      "time_sensitivity": "<value>",
+      "collaboration_context": "<value>",
+      "error_tolerance": "<value>",
+      "feedback_style": "<value>",
+      "context_retention_expectation": "<value>",
+      "autonomy_level": "<value>",
+      "detail_orientation": "<value>",
+      "explanation_depth": "<value>",
+      "primary_domain": "<value>",
+      "typical_scenario": "<value>"
+    },
+    "refined_summary": "<rewritten first-person summary, behaviorally grounded>"
+  }
