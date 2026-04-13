@@ -86,7 +86,8 @@ prompt: |
   - Confidence in assistant: [raised/lowered/unchanged] because [specific reason]
 
   ### Next action plan
-  What I will say or ask next and why, including communication approach.
+  1. Think about how to use the behavior control guidance to guide my next action? Align my tone and intent with the behavior control guidance.
+  2. What I will say or ask next and why, including communication approach.
   - If continuing: is this serving my original goal, or am I drifting?
   - If ending: what tipped me — satisfaction, frustration, or 
   resignation?
