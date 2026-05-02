@@ -1,16 +1,31 @@
-# S³-Sim: Simulating Humans for Personalized Language Modeling
+# Mind2Dialogue: State-Aware User Simulation for Theory-of-Mind and Personalization
 
-> **Structured State Simulation** — a white-box user simulator + privileged
-> distillation pipeline for generating multi-turn personalization data with
-> evolving latent user state.
+## Abstract
 
-S³-Sim addresses the central bottleneck of personalized LLM alignment:
-high-quality conversational data is private, while public synthetic data
-uses static personas that capture surface behavior but miss the causal
-link between a user's *internal* psychological state and their utterances.
-S³-Sim closes this gap by maintaining an explicit, evolving latent state
-during generation, then training a student model to reconstruct that
-state implicitly from observable history alone.
+Developing Large Language Models (LLMs) capable of true personalization
+remains a significant challenge, primarily due to the scarcity of
+high-quality, private personalized conversation data. Existing
+approaches rely on publicly available internet data, which suffers from
+severe distribution shifts, or synthetic data generated from static
+personas, which fail to capture the dynamic causal structure of
+real-world interactions. Consequently, models trained on such data
+struggle with long-horizon intent understanding and social reasoning.
+
+To address this bottleneck, we propose a novel data generation pipeline
+that synthesizes conversation trajectories by explicitly and
+structurally maintaining latent user state, encompassing psychological
+dynamics, beliefs, and evolving social relationships. Unlike naïve
+scaling strategies, our approach uses these evolving user states as
+continuous constraints to guide generation, ensuring that the
+synthesized dialogues reflect realistic causal depth rather than
+surface-level mimicry.
+
+We systematically analyze the impact of different state factors on data
+quality and demonstrate that our framework enables the controllable
+scaling of diverse, high-fidelity personalized data. Experiments show
+that models fine-tuned on our data exhibit superior sample efficiency
+and significantly improved capabilities in intention inference and
+theory-of-mind reasoning compared to baselines.
 
 ---
 
@@ -77,8 +92,8 @@ to reconstruct latent user dynamics implicitly at inference time.
 ## Installation
 
 ```bash
-git clone --recursive https://github.com/wannabeyourfriend/S3-Sim-Simulating-Humans-for-Personalized-Language-Modeling.git
-cd     S3-Sim-Simulating-Humans-for-Personalized-Language-Modeling
+git clone --recursive https://github.com/wannabeyourfriend/mind2dialogue.git
+cd     mind2dialogue
 uv sync                                          # or: pip install -e .
 ```
 
@@ -200,8 +215,8 @@ and the `training/` submodule for the trainer that consumes them.
 ## Citation
 
 ```bibtex
-@article{s3sim2026,
-  title  = {{S\textsuperscript{3}-Sim}: Simulating Humans with Structured Latent State for Personalized Language Modeling},
+@article{mind2dialogue2026,
+  title  = {Mind2Dialogue: State-Aware User Simulation for Theory-of-Mind and Personalization},
   author = {Anonymous},
   year   = {2026},
   note   = {Submitted to NeurIPS Datasets \& Benchmarks Track}
