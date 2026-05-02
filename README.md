@@ -58,10 +58,10 @@ Five named ablations isolate the contribution of each axis:
 │   │   └── behavior/            # behavior library, selection, block rendering
 │   └── qc/                      # 6-dimension quality-check pipeline (D1–D6)
 │
-├── training/                    # SFT assembly + reference LoRA recipe
-│   ├── assemble_sft.py          # concatenate conv + QA JSONLs → train.jsonl
-│   ├── configs/                 # reference TRL/axolotl YAML
-│   └── README.md                # one-liner training recipe
+├── training/                    # SFT trainer + serving (submodule)
+│   ├── sft_trainer.py           # single-file Unsloth + TRL multi-turn SFT
+│   ├── configs/                 # one YAML per run
+│   └── scripts/                 # train + vLLM serving launchers
 │
 ├── p13n-eval-harness/           # six personalization benchmarks (submodule)
 │   └── multibench/benchmarks/   # bigtom · lamp · personalens · personamem · prefeval · sotopia
@@ -126,27 +126,15 @@ python run_qa_construction.py \
        --qc-results        output/qc/v1/qc_results.jsonl \
        --output-dir        output/qa/v1
 
-# 4. Assemble SFT mix (conversation + QA)
-python -m training.assemble_sft \
-       --conv-dirs output/conversations/full \
-       --qa-files  output/qa/v1/personamem_mcq.jsonl \
-                   output/qa/v1/prefeval_gen.jsonl \
-       --output    data/sft/train.jsonl
+# 4. Train (Unsloth + TRL multi-turn SFT; see training/ submodule)
+git submodule update --init training
+cp output/qa/v1/*.jsonl training/data/
+bash training/scripts/train_qwen3_4b_modeB.sh    # or any configs/*.yaml
 
-# 5. Train (TRL SFTTrainer; full recipe in training/README.md)
-accelerate launch -m trl sft \
-       --model_name_or_path Qwen/Qwen3-8B \
-       --dataset_name       data/sft/train.jsonl \
-       --use_peft --lora_r 16 --lora_alpha 32 \
-       --per_device_train_batch_size 2 --gradient_accumulation_steps 16 \
-       --learning_rate 2e-4 --num_train_epochs 3 \
-       --max_seq_length 4096 --packing True --bf16 \
-       --output_dir output/sft/qwen3_8b_s3sim
-
-# 6. Evaluate
+# 5. Evaluate
 python run_eval_qa.py --qa-dir output/qa/v1 \
-                      --models output/sft/qwen3_8b_s3sim
-python -m multibench --model output/sft/qwen3_8b_s3sim   # six benchmarks
+                      --models training/outputs/<run_name>
+python -m multibench --model training/outputs/<run_name>   # six benchmarks
 ```
 
 Every entry script is **resumable** — each writes its outputs incrementally
@@ -180,8 +168,8 @@ Every conversation JSON carries the full latent trajectory:
 ```
 
 Both rollout-source and QA-source SFT lines share the OpenAI / TRL chat
-schema — see `training/README.md` for the canonical line shape and
-`samples/` for one-line examples of every output type.
+schema — see `samples/` for one-line examples of every output type
+and the `training/` submodule for the trainer that consumes them.
 
 ---
 

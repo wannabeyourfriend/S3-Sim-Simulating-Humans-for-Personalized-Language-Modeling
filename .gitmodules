@@ -2,3 +2,7 @@
 	path = p13n-eval-harness
 	url = https://github.com/wannabeyourfriend/p13n-eval-harness
 	branch = main
+[submodule "training"]
+	path = training
+	url = https://github.com/wannabeyourfriend/s3-sim-private-dev-repo.git
+	branch = model-trainer-deployer
