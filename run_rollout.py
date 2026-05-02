@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 ROOT = Path(__file__).resolve().parent
 PROMPTS_JSONL = ROOT / "data" / "rewritten_prompts" / "original_rewritten_selected_prompts_us.jsonl"
-PROFILES_DIR = ROOT / "data" / "refined_profiles" / "US"
+PROFILES_DIR = ROOT / "data" / "filterd_refined_profiles" / "summary_refined_profiles_us.jsonl"
 
 def load_prompt_lines(path: Path, persona_ids: set[str] | None = None,
                       max_prompts: int | None = None) -> list[dict]:
@@ -45,12 +45,13 @@ def load_prompt_lines(path: Path, persona_ids: set[str] | None = None,
 
 async def main(ablation: str, concurrency: int, max_turns: int, min_turns: int,
                persona_ids: list[str] | None, max_prompts: int | None,
-               output_dir: str | None = None):
+               output_dir: str | None = None, prompts_jsonl: str | None = None,
+               profiles: str | None = None):
     # Lazy imports so argparse --help is fast
     from user_simulator.data import LLM, SIM_MODEL, load_personas, save_json, CONV_DIR, SFT_DIR
     from user_simulator.ablation import AblationConfig
     from user_simulator.simulator import rollout_conversation
-    from user_simulator.oracle import build_sft_system_prompt
+    from user_simulator.sft import build_sft_instance
 
     config = AblationConfig.from_name(ablation)
     if output_dir:
@@ -58,13 +59,15 @@ async def main(ablation: str, concurrency: int, max_turns: int, min_turns: int,
         SFT_DIR = Path(output_dir) / "sft"
 
     # ── Load personas into a dict ──
-    personas_list = load_personas(PROFILES_DIR)
+    profiles_path = Path(profiles) if profiles else PROFILES_DIR
+    personas_list = load_personas(profiles_path)
     persona_map: dict[str, object] = {p.id: p for p in personas_list}
-    logger.info("Loaded %d personas from %s", len(persona_map), PROFILES_DIR)
+    logger.info("Loaded %d personas from %s", len(persona_map), profiles_path)
 
     # ── Load prompt lines ──
     id_set = set(persona_ids) if persona_ids else None
-    prompt_lines = load_prompt_lines(PROMPTS_JSONL, persona_ids=id_set, max_prompts=max_prompts)
+    prompts_path = Path(prompts_jsonl) if prompts_jsonl else PROMPTS_JSONL
+    prompt_lines = load_prompt_lines(prompts_path, persona_ids=id_set, max_prompts=max_prompts)
     logger.info("Loaded %d prompt lines (filter: persona_ids=%s, max_prompts=%s)",
                 len(prompt_lines), persona_ids, max_prompts)
 
@@ -89,35 +92,9 @@ async def main(ablation: str, concurrency: int, max_turns: int, min_turns: int,
 
     counter = {"done": 0, "skipped": 0, "failed": 0, "total": len(tasks_spec)}
 
-    def _build_sft_instance(session: dict) -> dict | None:
-        conversation = session.get("conversation", [])
-        if not conversation:
-            return None
-        system_msg = build_sft_system_prompt(
-            profile_summary=session.get("profile_summary", ""),
-            behavior_metadata=json.dumps(session.get("behavioral_metadata", {}),
-                                         indent=2, ensure_ascii=False)
-                if session.get("behavioral_metadata") else "",
-            include_profile=config.sft_include_profile,
-        )
-        messages = [{"role": "system", "content": system_msg}]
-        for msg in conversation:
-            if msg["role"] in ("user", "assistant"):
-                messages.append({"role": msg["role"], "content": msg["content"]})
-        return {
-            "messages": messages,
-            "metadata": {
-                "persona_id": session.get("persona_id", ""),
-                "scenario_id": session.get("prompt_id", ""),
-                "num_turns": session.get("num_turns", 0),
-                "termination": session.get("termination", ""),
-                "ablation": config.name,
-            },
-        }
-
     async def rollout_one(persona, prompt_data, sft_file):
         prompt_id = prompt_data.get("prompt_id", "unknown")
-        initial_msg = prompt_data.get("rewritten", "")
+        initial_msg = prompt_data.get("rewritten") or prompt_data.get("prompt_text", "")
         if not initial_msg:
             counter["skipped"] += 1
             return
@@ -140,7 +117,7 @@ async def main(ablation: str, concurrency: int, max_turns: int, min_turns: int,
             conv_path.parent.mkdir(parents=True, exist_ok=True)
             save_json(session, conv_path)
 
-            sft_instance = _build_sft_instance(session)
+            sft_instance = build_sft_instance(session, config)
             if sft_instance:
                 async with sft_lock:
                     sft_file.write(json.dumps(sft_instance, ensure_ascii=False) + "\n")
@@ -154,11 +131,16 @@ async def main(ablation: str, concurrency: int, max_turns: int, min_turns: int,
                             counter["skipped"], counter["failed"])
         except Exception as e:
             counter["failed"] += 1
-            logger.error("[%s/%s] Failed %s: %s", config.name, persona.id, safe_id, e)
+            logger.error("[%s/%s] Failed %s: %s: %s",
+                         config.name, persona.id, safe_id, type(e).__name__, e)
 
     sem = asyncio.Semaphore(concurrency)
 
-    with open(sft_path, "w", encoding="utf-8") as sft_file:
+    # Append-mode is resume-safe: the conv_path.exists() check in rollout_one
+    # already skips re-rolling completed conversations, so re-running the
+    # script after a partial failure preserves the prior SFT lines and only
+    # appends new ones.
+    with open(sft_path, "a", encoding="utf-8") as sft_file:
         async def bounded(persona, prompt_data):
             async with sem:
                 await rollout_one(persona, prompt_data, sft_file)
@@ -189,6 +171,10 @@ if __name__ == "__main__":
                         help="Max prompts per persona")
     parser.add_argument("--output-dir", type=str, default=None,
                         help="Custom output directory (default: output/)")
+    parser.add_argument("--prompts-jsonl", type=str, default=None,
+                        help="Prompt JSONL with persona_id and rewritten/prompt_text fields")
+    parser.add_argument("--profiles", type=str, default=None,
+                        help="Persona profile JSONL file or YAML directory")
     args = parser.parse_args()
 
     asyncio.run(main(
@@ -199,4 +185,6 @@ if __name__ == "__main__":
         persona_ids=args.persona_ids,
         output_dir=args.output_dir,
         max_prompts=args.max_prompts,
+        prompts_jsonl=args.prompts_jsonl,
+        profiles=args.profiles,
     ))
