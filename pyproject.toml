@@ -1,0 +1,33 @@
+[project]
+name = "s3-sim"
+version = "0.1.0"
+description = "S³-Sim: Simulating Humans for Personalized Language Modeling"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+keywords = ["personalization", "synthetic-data", "user-simulator", "sft", "llm"]
+dependencies = [
+    "openai>=1.0",
+    "tiktoken>=0.7",
+    "pyyaml>=6.0",
+    "python-dotenv>=1.0",
+    "pydantic>=2.7",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.23",
+]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["user_simulator*", "eval*", "training*"]
+exclude = ["tests*", "samples*", "data*", "p13n-eval-harness*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
