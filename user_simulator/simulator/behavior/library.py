@@ -5,6 +5,7 @@ simulator.py behavior. A future refinement may make this lazy via a
 `BehaviorLibrary` class + `get_library()` accessor; for now, the eager
 behavior is preserved so phase 2 is a pure structural split.
 """
+
 from __future__ import annotations
 
 import json
@@ -20,14 +21,16 @@ _TMPL_CTRL_SYSTEM = _BEHAVIOR_SPEC.get("system_prompt", "")
 _TMPL_CTRL_USER = _BEHAVIOR_SPEC.get("user_prompt", "")
 
 _MODE_RANK = {
-    "Meta-Conversation": 0, "Social Interaction": 1,
-    "Information Seeking": 2, "Information Processing & Synthesis": 3,
-    "Procedural Guidance & Execution": 4, "Content Creation & Transformation": 5,
-    "Multiple (blended)": 6, "Mixed": 7,
+    "Meta-Conversation": 0,
+    "Social Interaction": 1,
+    "Information Seeking": 2,
+    "Information Processing & Synthesis": 3,
+    "Procedural Guidance & Execution": 4,
+    "Content Creation & Transformation": 5,
+    "Multiple (blended)": 6,
+    "Mixed": 7,
 }
 
-# behavior_id reserved as the no-op fallback used when the controller fails
-# AND the sampling pool is empty; also pulled out into _DEFAULT_BEHAVIOR.
 _DEFAULT_BEHAVIOR_ID = "default_behavior"
 
 
@@ -61,6 +64,7 @@ def _load_behaviors() -> tuple[dict[str, dict], list[str], dict, dict]:
         b = behaviors[bid]
         mode = (b.get("tuna_mode") or "").strip()
         return (_MODE_RANK.get(mode, 99), mode, b.get("tuna_strategy", ""), bid)
+
     order = sorted(behaviors, key=_key)
 
     default = behaviors.get(_DEFAULT_BEHAVIOR_ID, {})

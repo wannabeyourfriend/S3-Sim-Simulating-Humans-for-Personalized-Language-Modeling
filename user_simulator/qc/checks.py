@@ -1,9 +1,9 @@
 """Programmatic QC checks (D1–D4). Pure, no LLM, fast."""
+
 from __future__ import annotations
 
 from user_simulator.data import Persona, count_tokens
 
-# Required top-level fields for D1 schema validity.
 _REQUIRED_FIELDS = (
     "persona_id",
     "prompt_id",
@@ -13,7 +13,6 @@ _REQUIRED_FIELDS = (
     "profile_summary",
 )
 
-# Ablations that are expected to populate user_state_trajectory.
 _STATE_USING_ABLATIONS = {"full", "no_privilege", "no_behavior", "oracle_profile_only"}
 
 _MIN_NUM_TURNS = 4
@@ -51,19 +50,16 @@ def check_structure(conv: dict) -> tuple[bool, list[str]]:
     if "user" not in roles or "assistant" not in roles:
         notes.append("missing user or assistant role")
 
-    # No two consecutive same-role turns
     for i in range(1, len(msgs)):
         if msgs[i].get("role") == msgs[i - 1].get("role"):
             notes.append(f"consecutive same-role turns at index {i}")
             break
 
-    # No empty content
     for i, m in enumerate(msgs):
         if not (m.get("content") or "").strip():
             notes.append(f"empty content at turn {i}")
             break
 
-    # Token bounds
     total_tokens = sum(count_tokens(m.get("content", "")) for m in msgs)
     if total_tokens < _MIN_TOTAL_TOKENS:
         notes.append(f"total_tokens={total_tokens} < {_MIN_TOTAL_TOKENS}")
@@ -86,9 +82,6 @@ def check_state_trajectory(conv: dict) -> tuple[bool, list[str]]:
     traj = conv.get("user_state_trajectory") or []
     num_turns = conv.get("num_turns", 0) or 0
 
-    # The simulator emits one state report per assistant turn (i.e. num_turns - 1
-    # user→assistant transitions, with the first user turn unannotated). We require
-    # at least num_turns - 1 entries; ≥ 1 minimum.
     expected = max(1, num_turns - 1)
     if len(traj) < expected:
         notes.append(

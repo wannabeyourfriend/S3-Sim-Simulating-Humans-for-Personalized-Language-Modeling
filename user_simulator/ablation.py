@@ -1,4 +1,5 @@
 """Ablation configuration for S3-Sim 4-experiment data generation."""
+
 from dataclasses import dataclass, field
 
 
@@ -11,36 +12,30 @@ class AblationConfig:
     3. no_behavior:    user(state only)     + assistant(oracle w/ profile+state)
     4. no_state:       user(vanilla)        + assistant(oracle w/ profile+state)
     """
-    # User simulator axes
+
     use_user_state: bool = True
     use_behavior_injection: bool = True
-    history_window: int | None = None  # vanilla only: None=full history
+    history_window: int | None = None
 
-    # Assistant strategy: "oracle" uses profile+state, "vanilla" sees only conversation
-    assistant_strategy: str = "oracle"  # "oracle" | "vanilla"
+    assistant_strategy: str = "oracle"
 
-    # Whether the SFT system prompt includes user profile
     sft_include_profile: bool = True
 
-    # Label
     name: str = "full"
 
-    # ── LLM hyperparameters (consolidated from scattered call sites) ─────────
-    # User simulator
     user_temperature: float = 0.7
     user_max_tokens: int = 2048
     user_retry_temps: tuple[float, ...] = (0.7, 0.8, 0.9, 1.0, 1.1)
-    # Assistant (oracle / oracle_profile_only / vanilla)
+
     assistant_temperature: float = 0.7
     assistant_max_tokens: int = 1024
-    # Behavior controller
+
     controller_temperature: float = 0.9
     controller_max_tokens: int = 128
-    # Deep-scenario constructor (run_deep_scenario_rollout.py only)
+
     scenario_constructor_temperature: float = 0.8
     scenario_constructor_max_tokens: int = 4096
-    # How many trailing messages of the conversation to feed back into the
-    # stateful user-simulator prompt (full history is already in user_state).
+
     recent_history_window: int = 4
 
     @classmethod
@@ -51,8 +46,7 @@ class AblationConfig:
     @classmethod
     def no_privilege(cls) -> "AblationConfig":
         """S3 user (state+behavior) + vanilla assistant (no profile access)."""
-        return cls(assistant_strategy="vanilla", sft_include_profile=False,
-                   name="no_privilege")
+        return cls(assistant_strategy="vanilla", sft_include_profile=False, name="no_privilege")
 
     @classmethod
     def no_behavior(cls) -> "AblationConfig":
@@ -62,14 +56,12 @@ class AblationConfig:
     @classmethod
     def no_state(cls) -> "AblationConfig":
         """Vanilla user (no state, no behavior) + oracle assistant (profile+state)."""
-        return cls(use_user_state=False, use_behavior_injection=False,
-                   name="no_state")
+        return cls(use_user_state=False, use_behavior_injection=False, name="no_state")
 
     @classmethod
     def oracle_profile_only(cls) -> "AblationConfig":
         """S3 user (state+behavior) + oracle with profile only (no user_state access)."""
-        return cls(assistant_strategy="oracle_profile_only",
-                   name="oracle_profile_only")
+        return cls(assistant_strategy="oracle_profile_only", name="oracle_profile_only")
 
     @classmethod
     def from_name(cls, name: str) -> "AblationConfig":

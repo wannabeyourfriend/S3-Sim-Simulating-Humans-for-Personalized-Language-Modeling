@@ -31,6 +31,7 @@ Examples:
         --self-consistency-qc \
         --concurrency 40
 """
+
 from __future__ import annotations
 
 import argparse
@@ -101,41 +102,31 @@ async def main(args):
     out_dir = Path(args.output_dir).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # Load profiles
     profiles: dict = {}
     if args.profiles_jsonl:
         profiles = _load_profiles_jsonl(Path(args.profiles_jsonl))
 
-    # Tier filter
     tier_a_keys: set[tuple[str, str]] | None = None
     if args.qc_results:
         tier_a_keys = _load_tier_a_keys(Path(args.qc_results))
 
-    # Walk conversation files
     conv_files = sorted(conv_dir.rglob("*.json"))
     if args.sample:
         conv_files = conv_files[: args.sample]
     logger.info("Found %d conversation JSONs in %s", len(conv_files), conv_dir)
 
-    # Resolve QA styles
     styles = [QAStyle(s) for s in args.styles]
     logger.info("Generating QA styles: %s", [s.value for s in styles])
 
-    # LLM
     gen_model = args.generator_model
-    llm = LLM(model=gen_model, max_concurrent=args.concurrency,
-              log_calls=args.log_calls)
+    llm = LLM(model=gen_model, max_concurrent=args.concurrency, log_calls=args.log_calls)
     logger.info("Generator model: %s; concurrency=%d", gen_model, args.concurrency)
 
-    # Per-style output files (append mode → resume-safe at file level)
-    style_files: dict[QAStyle, Path] = {
-        s: out_dir / f"{s.value}.jsonl" for s in styles
-    }
+    style_files: dict[QAStyle, Path] = {s: out_dir / f"{s.value}.jsonl" for s in styles}
     file_locks: dict[QAStyle, asyncio.Lock] = {s: asyncio.Lock() for s in styles}
-    file_handles: dict[QAStyle, Any] = {}  # opened below
+    file_handles: dict[QAStyle, Any] = {}
 
-    counter = {"convs": 0, "items": 0, "skipped": 0, "qc_dropped": 0,
-               "failed": 0}
+    counter = {"convs": 0, "items": 0, "skipped": 0, "qc_dropped": 0, "failed": 0}
 
     async def process_one(path: Path):
         try:
@@ -158,13 +149,12 @@ async def main(args):
             try:
                 item = await generate_for_conv(persona, session, style, llm)
             except Exception as e:
-                logger.warning("Generation failed for %s/%s/%s: %s",
-                               pid, sid, style.value, e)
+                logger.warning("Generation failed for %s/%s/%s: %s", pid, sid, style.value, e)
                 counter["failed"] += 1
                 continue
             if item is None:
                 continue
-            # Optional self-consistency for MCQ
+
             if args.self_consistency_qc and style is QAStyle.PERSONAMEM_MCQ:
                 ok = await self_consistency_check_mcq(item, llm)
                 if not ok:
@@ -176,11 +166,15 @@ async def main(args):
                 file_handles[style].flush()
             counter["items"] += 1
             if counter["items"] % 25 == 0:
-                logger.info("Progress: %d items written (%d convs processed, "
-                            "%d skipped, %d qc-dropped, %d failed)",
-                            counter["items"], counter["convs"],
-                            counter["skipped"], counter["qc_dropped"],
-                            counter["failed"])
+                logger.info(
+                    "Progress: %d items written (%d convs processed, "
+                    "%d skipped, %d qc-dropped, %d failed)",
+                    counter["items"],
+                    counter["convs"],
+                    counter["skipped"],
+                    counter["qc_dropped"],
+                    counter["failed"],
+                )
 
     sem = asyncio.Semaphore(args.concurrency)
 
@@ -188,7 +182,6 @@ async def main(args):
         async with sem:
             await process_one(path)
 
-    # Open all per-style files
     try:
         for s, p in style_files.items():
             file_handles[s] = open(p, "a", encoding="utf-8")
@@ -202,8 +195,12 @@ async def main(args):
 
     logger.info(
         "Done in %.1fs: %d items, %d convs, %d skipped (non-Tier-A), %d qc-dropped, %d failed",
-        elapsed, counter["items"], counter["convs"],
-        counter["skipped"], counter["qc_dropped"], counter["failed"],
+        elapsed,
+        counter["items"],
+        counter["convs"],
+        counter["skipped"],
+        counter["qc_dropped"],
+        counter["failed"],
     )
     for s, p in style_files.items():
         try:
@@ -215,27 +212,45 @@ async def main(args):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Construct QA-format SFT data from S³-Sim conversations")
-    parser.add_argument("--conversations-dir", required=True,
-                        help="Directory of conversation JSONs (recursive)")
-    parser.add_argument("--output-dir", default="output/qa/v1_demo",
-                        help="Where per-style JSONL files go")
-    parser.add_argument("--qc-results", default=None,
-                        help="Path to qc_results.jsonl. If given, only Tier-A "
-                             "conversations are used as sources.")
-    parser.add_argument("--profiles-jsonl",
-                        default="data/filterd_refined_profiles/summary_refined_profiles_us.jsonl",
-                        help="JSONL of personas (one per line)")
-    parser.add_argument("--styles", nargs="+",
-                        default=["personamem_mcq", "prefeval_gen", "bigtom_tom", "lamp_cls"],
-                        choices=["personamem_mcq", "prefeval_gen", "bigtom_tom", "lamp_cls"])
-    parser.add_argument("--generator-model", default="gpt-4.1-mini",
-                        help="QA generator model (defaults to gpt-4.1-mini, distinct from convo generator)")
+    parser = argparse.ArgumentParser(
+        description="Construct QA-format SFT data from S³-Sim conversations"
+    )
+    parser.add_argument(
+        "--conversations-dir", required=True, help="Directory of conversation JSONs (recursive)"
+    )
+    parser.add_argument(
+        "--output-dir", default="output/qa/v1_demo", help="Where per-style JSONL files go"
+    )
+    parser.add_argument(
+        "--qc-results",
+        default=None,
+        help="Path to qc_results.jsonl. If given, only Tier-A conversations are used as sources.",
+    )
+    parser.add_argument(
+        "--profiles-jsonl",
+        default="data/filterd_refined_profiles/summary_refined_profiles_us.jsonl",
+        help="JSONL of personas (one per line)",
+    )
+    parser.add_argument(
+        "--styles",
+        nargs="+",
+        default=["personamem_mcq", "prefeval_gen", "bigtom_tom", "lamp_cls"],
+        choices=["personamem_mcq", "prefeval_gen", "bigtom_tom", "lamp_cls"],
+    )
+    parser.add_argument(
+        "--generator-model",
+        default="gpt-4.1-mini",
+        help="QA generator model (defaults to gpt-4.1-mini, distinct from convo generator)",
+    )
     parser.add_argument("--concurrency", type=int, default=40)
-    parser.add_argument("--sample", type=int, default=None,
-                        help="Process only the first N conv files (smoke)")
-    parser.add_argument("--self-consistency-qc", action="store_true",
-                        help="Run profile-stripped self-consistency check on MCQ items")
+    parser.add_argument(
+        "--sample", type=int, default=None, help="Process only the first N conv files (smoke)"
+    )
+    parser.add_argument(
+        "--self-consistency-qc",
+        action="store_true",
+        help="Run profile-stripped self-consistency check on MCQ items",
+    )
     parser.add_argument("--log-calls", action="store_true")
     args = parser.parse_args()
     asyncio.run(main(args))

@@ -19,6 +19,7 @@ The output line shape is identical to `user_simulator.sft.build_sft_instance`:
 `{"messages": [...], "metadata": {...}}`. The trainer is format-agnostic;
 this is the lowest-friction integration.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -49,14 +50,12 @@ class QAItem:
     persona_id: str
     scenario_id: str
     user_query: str
-    answer_text: str               # gold target (letter for MCQ, free text for gen)
-    profile_block: str = ""        # optional system-prompt persona block
-    options: list[str] | None = None      # for MCQ: ordered A..D in display order
-    correct_letter: str | None = None     # for MCQ
+    answer_text: str
+    profile_block: str = ""
+    options: list[str] | None = None
+    correct_letter: str | None = None
     extra: dict = field(default_factory=dict)
 
-
-# ── Helpers ───────────────────────────────────────────────────────────────────
 
 _PERSONAMEM_RECALL_SUFFIX = (
     " Please recall my related preferences from our conversation history "
@@ -98,12 +97,8 @@ def _persona_attributes_str(persona: Persona | None) -> str:
         return "{}"
     if persona.attributes:
         return json.dumps(persona.attributes, indent=2, ensure_ascii=False)
-    # Fall back to behavioral_metadata as attributes proxy (refined profiles often
-    # carry attributes inside behavioral_metadata).
+
     return json.dumps(persona.behavioral_metadata or {}, indent=2, ensure_ascii=False)
-
-
-# ── Per-style builders ────────────────────────────────────────────────────────
 
 
 _PERSONAMEM_TMPL = load_prompt("qa_personamem")
@@ -134,9 +129,13 @@ async def _write_mcq_reasoning(
     )
     try:
         text = await llm.chat(
-            [{"role": "system", "content": prompt},
-             {"role": "user", "content": "Write the reasoning now."}],
-            temperature=0.5, max_tokens=400, call_type="qa_mcq_reasoning",
+            [
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": "Write the reasoning now."},
+            ],
+            temperature=0.5,
+            max_tokens=400,
+            call_type="qa_mcq_reasoning",
         )
     except Exception as e:
         logger.warning("MCQ reasoning generation failed: %s", e)
@@ -144,15 +143,13 @@ async def _write_mcq_reasoning(
     if not text or not text.strip():
         return None
     text = text.strip()
-    # The model is instructed to end with `final_answer_format`. If it didn't,
-    # append it ourselves so the downstream eval-harness regex still hits.
+
     if final_answer_format not in text:
         text = f"{text}\n\n{final_answer_format}"
     return text
 
 
-async def _build_personamem_mcq(persona: Persona | None, session: dict,
-                                llm: LLM) -> QAItem | None:
+async def _build_personamem_mcq(persona: Persona | None, session: dict, llm: LLM) -> QAItem | None:
     persona_id = session.get("persona_id", "")
     scenario_id = session.get("prompt_id", "")
     prompt = render(
@@ -164,44 +161,47 @@ async def _build_personamem_mcq(persona: Persona | None, session: dict,
     )
     try:
         data = await llm.chat_json(
-            [{"role": "system", "content": prompt},
-             {"role": "user", "content": "Generate the QA item now."}],
-            temperature=0.7, max_tokens=1500, call_type="qa_personamem",
+            [
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": "Generate the QA item now."},
+            ],
+            temperature=0.7,
+            max_tokens=1500,
+            call_type="qa_personamem",
         )
     except Exception as e:
-        logger.warning("personamem_mcq generation failed for %s/%s: %s",
-                       persona_id, scenario_id, e)
+        logger.warning("personamem_mcq generation failed for %s/%s: %s", persona_id, scenario_id, e)
         return None
 
     required = ("user_query", "correct", "stereotypical", "random", "generic")
     if not isinstance(data, dict) or any(k not in data for k in required):
-        logger.warning("personamem_mcq missing required keys for %s/%s: %s",
-                       persona_id, scenario_id, list(data.keys()) if isinstance(data, dict) else type(data))
+        logger.warning(
+            "personamem_mcq missing required keys for %s/%s: %s",
+            persona_id,
+            scenario_id,
+            list(data.keys()) if isinstance(data, dict) else type(data),
+        )
         return None
 
     user_query = str(data["user_query"]).strip()
     correct = str(data["correct"]).strip()
-    distractors = [str(data["stereotypical"]).strip(),
-                   str(data["random"]).strip(),
-                   str(data["generic"]).strip()]
+    distractors = [
+        str(data["stereotypical"]).strip(),
+        str(data["random"]).strip(),
+        str(data["generic"]).strip(),
+    ]
     if not user_query or not correct or any(not d for d in distractors):
         return None
 
-    # Deterministic shuffle into A/B/C/D
     rng = random.Random(_det_seed(persona_id, scenario_id, QAStyle.PERSONAMEM_MCQ.value))
     options = [correct] + distractors
     rng.shuffle(options)
     correct_letter = chr(ord("A") + options.index(correct))
 
-    # Generate chain-of-thought that lands on the correct letter, then fall back
-    # to the plain "Final Answer: X" string if the reasoning call fails.
     final_answer = f"Final Answer: {correct_letter}"
     reasoning_text = await _write_mcq_reasoning(
         context=_conversation_excerpt(session.get("conversation", [])),
-        question_block=(
-            f"Question: {user_query}\n\n"
-            + _personamem_options_block(options)
-        ),
+        question_block=(f"Question: {user_query}\n\n" + _personamem_options_block(options)),
         correct_letter=correct_letter,
         final_answer_format=final_answer,
         llm=llm,
@@ -224,8 +224,7 @@ async def _build_personamem_mcq(persona: Persona | None, session: dict,
     )
 
 
-async def _build_prefeval_gen(persona: Persona | None, session: dict,
-                              llm: LLM) -> QAItem | None:
+async def _build_prefeval_gen(persona: Persona | None, session: dict, llm: LLM) -> QAItem | None:
     persona_id = session.get("persona_id", "")
     scenario_id = session.get("prompt_id", "")
     prompt = render(
@@ -237,13 +236,16 @@ async def _build_prefeval_gen(persona: Persona | None, session: dict,
     )
     try:
         data = await llm.chat_json(
-            [{"role": "system", "content": prompt},
-             {"role": "user", "content": "Generate the QA item now."}],
-            temperature=0.7, max_tokens=1500, call_type="qa_prefeval",
+            [
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": "Generate the QA item now."},
+            ],
+            temperature=0.7,
+            max_tokens=1500,
+            call_type="qa_prefeval",
         )
     except Exception as e:
-        logger.warning("prefeval_gen generation failed for %s/%s: %s",
-                       persona_id, scenario_id, e)
+        logger.warning("prefeval_gen generation failed for %s/%s: %s", persona_id, scenario_id, e)
         return None
 
     required = ("preference", "question", "assistant_response")
@@ -257,15 +259,8 @@ async def _build_prefeval_gen(persona: Persona | None, session: dict,
     if not preference or not question or not response:
         return None
 
-    # Acknowledge enforcement: the eval-harness PrefEval `acknow` judge expects
-    # the response to reference the preference. We require either (a) the model's
-    # claimed acknowledge_quote actually appears as a case-insensitive substring
-    # of the response, or (b) the response shares a reasonable amount of token
-    # overlap with the preference itself (≥ 2 tokens of length ≥ 4). Drop items
-    # that fail both checks — they would silently fail PrefEval at eval time.
     if not _prefeval_acknowledges(preference, response, ack):
-        logger.info("prefeval_gen dropped (no acknowledgement) for %s/%s",
-                    persona_id, scenario_id)
+        logger.info("prefeval_gen dropped (no acknowledgement) for %s/%s", persona_id, scenario_id)
         return None
 
     return QAItem(
@@ -286,10 +281,8 @@ def _prefeval_acknowledges(preference: str, response: str, ack_quote: str) -> bo
     resp_lower = response.lower()
     if ack_quote and ack_quote.lower() in resp_lower:
         return True
-    # Token-overlap fallback: at least 2 tokens of length ≥ 4 from the preference
-    # appear in the response. Filters trivial stop-word matches.
-    pref_tokens = {t.lower().strip(".,!?;:\"'") for t in preference.split()
-                   if len(t) >= 4}
+
+    pref_tokens = {t.lower().strip(".,!?;:\"'") for t in preference.split() if len(t) >= 4}
     hits = sum(1 for t in pref_tokens if t and t in resp_lower)
     return hits >= 2
 
@@ -297,13 +290,12 @@ def _prefeval_acknowledges(preference: str, response: str, ack_quote: str) -> bo
 _BIGTOM_LETTER_RE = re.compile(r"^[ab]$", re.IGNORECASE)
 
 
-async def _build_bigtom_tom(persona: Persona | None, session: dict,
-                            llm: LLM) -> QAItem | None:
+async def _build_bigtom_tom(persona: Persona | None, session: dict, llm: LLM) -> QAItem | None:
     persona_id = session.get("persona_id", "")
     scenario_id = session.get("prompt_id", "")
     user_state = _last_user_state(session)
     if not user_state:
-        return None  # Can't build ToM item without user_state
+        return None
     prompt = render(
         _BIGTOM_TMPL,
         user_state=user_state,
@@ -311,13 +303,16 @@ async def _build_bigtom_tom(persona: Persona | None, session: dict,
     )
     try:
         data = await llm.chat_json(
-            [{"role": "system", "content": prompt},
-             {"role": "user", "content": "Generate the QA item now."}],
-            temperature=0.7, max_tokens=800, call_type="qa_bigtom",
+            [
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": "Generate the QA item now."},
+            ],
+            temperature=0.7,
+            max_tokens=800,
+            call_type="qa_bigtom",
         )
     except Exception as e:
-        logger.warning("bigtom_tom generation failed for %s/%s: %s",
-                       persona_id, scenario_id, e)
+        logger.warning("bigtom_tom generation failed for %s/%s: %s", persona_id, scenario_id, e)
         return None
 
     required = ("narrative", "question", "option_a", "option_b", "correct_letter")
@@ -334,16 +329,10 @@ async def _build_bigtom_tom(persona: Persona | None, session: dict,
     if not narrative or not question or not opt_a or not opt_b:
         return None
 
-    user_text = (
-        f"{narrative}\n\n{question}\n\n"
-        f"Choose one of the following:\n"
-        f"a) {opt_a}\nb) {opt_b}"
-    )
+    user_text = f"{narrative}\n\n{question}\n\nChoose one of the following:\na) {opt_a}\nb) {opt_b}"
     correct_text = opt_a if correct == "a" else opt_b
     final_answer = f"Answer:{correct}){correct_text}"
 
-    # Chain-of-thought that lands on the correct letter; fall back to the plain
-    # final-answer string if reasoning generation fails.
     reasoning_text = await _write_mcq_reasoning(
         context=_conversation_excerpt(session.get("conversation", [])),
         question_block=user_text,
@@ -370,8 +359,7 @@ async def _build_bigtom_tom(persona: Persona | None, session: dict,
     )
 
 
-async def _build_lamp_cls(persona: Persona | None, session: dict,
-                          llm: LLM) -> QAItem | None:
+async def _build_lamp_cls(persona: Persona | None, session: dict, llm: LLM) -> QAItem | None:
     persona_id = session.get("persona_id", "")
     scenario_id = session.get("prompt_id", "")
     prompt = render(
@@ -382,13 +370,16 @@ async def _build_lamp_cls(persona: Persona | None, session: dict,
     )
     try:
         data = await llm.chat_json(
-            [{"role": "system", "content": prompt},
-             {"role": "user", "content": "Generate the QA item now."}],
-            temperature=0.7, max_tokens=1200, call_type="qa_lamp",
+            [
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": "Generate the QA item now."},
+            ],
+            temperature=0.7,
+            max_tokens=1200,
+            call_type="qa_lamp",
         )
     except Exception as e:
-        logger.warning("lamp_cls generation failed for %s/%s: %s",
-                       persona_id, scenario_id, e)
+        logger.warning("lamp_cls generation failed for %s/%s: %s", persona_id, scenario_id, e)
         return None
 
     required = ("task_family", "profile_items", "query", "target")
@@ -402,7 +393,6 @@ async def _build_lamp_cls(persona: Persona | None, session: dict,
     if not query or not target:
         return None
 
-    # Build LaMP-style user message: profile items prepended, then query.
     item_lines = []
     for it in items:
         if not isinstance(it, dict):
@@ -439,17 +429,13 @@ _BUILDERS = {
 }
 
 
-# ── Public API ────────────────────────────────────────────────────────────────
-
-
-async def generate_for_conv(persona: Persona | None, session: dict,
-                            style: QAStyle, llm: LLM) -> QAItem | None:
+async def generate_for_conv(
+    persona: Persona | None, session: dict, style: QAStyle, llm: LLM
+) -> QAItem | None:
     """Build one QA item of the given style from one conversation session."""
     builder = _BUILDERS[style]
     return await builder(persona, session, llm)
 
-
-# ── SFT line renderer (byte-match eval harness formats) ───────────────────────
 
 _BASE_SFT_INSTRUCTION = (
     "You are a personalized AI assistant. Use the conversation context to "
@@ -464,8 +450,8 @@ def _personamem_options_block(options: list[str]) -> str:
         "Please choose the best answer from the following options:\n\n"
         + "\n".join(parts)
         + "\n\nThink step by step about which answer best fits the user's "
-          "query and conversation context. Provide your reasoning first, "
-          "then give your final answer as 'Final Answer: [Letter]'"
+        "query and conversation context. Provide your reasoning first, "
+        "then give your final answer as 'Final Answer: [Letter]'"
     )
 
 
@@ -489,11 +475,8 @@ def qa_item_to_sft_line(item: QAItem, source_session: dict) -> dict:
     }
 
     if item.style is QAStyle.PERSONAMEM_MCQ:
-        # Eval harness sends multi-turn chat history → user_query (with recall
-        # suffix) + MCQ options block. We reproduce that exactly.
         history = source_session.get("conversation", []) or []
-        # Trim to last few turns to stay under 4K tokens; eval harness uses
-        # 32K-context history, but for SFT we want a compact illustrative window.
+
         history = history[-8:]
         user_msg = (
             item.user_query.rstrip()
@@ -501,9 +484,7 @@ def qa_item_to_sft_line(item: QAItem, source_session: dict) -> dict:
             + "\n\n"
             + _personamem_options_block(item.options or [])
         )
-        system_msg = (
-            f"{_BASE_SFT_INSTRUCTION}\n\n<persona>\n{item.profile_block}\n</persona>"
-        )
+        system_msg = f"{_BASE_SFT_INSTRUCTION}\n\n<persona>\n{item.profile_block}\n</persona>"
         messages = [{"role": "system", "content": system_msg}]
         for m in history:
             r = m.get("role")
@@ -515,13 +496,14 @@ def qa_item_to_sft_line(item: QAItem, source_session: dict) -> dict:
         return {"messages": messages, "metadata": metadata}
 
     if item.style is QAStyle.PREFEVAL_GEN:
-        # Eval harness: [user: preference, assistant: ack, user: question].
         preference = item.extra.get("preference", "")
         messages = [
             {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": preference},
-            {"role": "assistant",
-             "content": "Got it — I'll keep that in mind for our conversation."},
+            {
+                "role": "assistant",
+                "content": "Got it — I'll keep that in mind for our conversation.",
+            },
             {"role": "user", "content": item.user_query},
             {"role": "assistant", "content": item.answer_text},
         ]
@@ -529,9 +511,6 @@ def qa_item_to_sft_line(item: QAItem, source_session: dict) -> dict:
         return {"messages": messages, "metadata": metadata}
 
     if item.style is QAStyle.BIGTOM_TOM:
-        # Eval harness prompt_evaluate.txt: "Answer the questions based on the
-        # context. Keep your answer concise, few words are enough, maximum one
-        # sentence. Answer as 'Answer:<option>)<answer>'."
         system_msg = (
             "Answer the questions based on the context. Keep your answer "
             "concise, few words are enough, maximum one sentence. Answer "
@@ -546,7 +525,6 @@ def qa_item_to_sft_line(item: QAItem, source_session: dict) -> dict:
         return {"messages": messages, "metadata": metadata}
 
     if item.style is QAStyle.LAMP_CLS:
-        # LaMP harness prepends profile items + input query.
         system_msg = "You are a helpful assistant. Use the user's past items as context to produce the requested output."
         messages = [
             {"role": "system", "content": system_msg},
@@ -559,11 +537,7 @@ def qa_item_to_sft_line(item: QAItem, source_session: dict) -> dict:
     raise ValueError(f"unknown QA style: {item.style}")
 
 
-# ── Self-consistency QC ───────────────────────────────────────────────────────
-
-
-async def self_consistency_check_mcq(item: QAItem, llm: LLM,
-                                     n_retries: int = 3) -> bool:
+async def self_consistency_check_mcq(item: QAItem, llm: LLM, n_retries: int = 3) -> bool:
     """For MCQ items, re-ask the same question with profile stripped.
 
     If the model picks the correct letter ≥50% of N retries, the question
@@ -573,21 +547,21 @@ async def self_consistency_check_mcq(item: QAItem, llm: LLM,
     if item.style is not QAStyle.PERSONAMEM_MCQ or not item.options:
         return True
 
-    user_msg = (
-        item.user_query.rstrip()
-        + "\n\n"
-        + _personamem_options_block(item.options)
-    )
+    user_msg = item.user_query.rstrip() + "\n\n" + _personamem_options_block(item.options)
     prompt_msgs = [
-        {"role": "system", "content": "You are a helpful assistant. Answer the question based only on what is given."},
+        {
+            "role": "system",
+            "content": "You are a helpful assistant. Answer the question based only on what is given.",
+        },
         {"role": "user", "content": user_msg},
     ]
     hits = 0
     target = item.correct_letter
     for _ in range(n_retries):
         try:
-            resp = await llm.chat(prompt_msgs, temperature=0.0, max_tokens=200,
-                                  call_type="qa_self_consistency")
+            resp = await llm.chat(
+                prompt_msgs, temperature=0.0, max_tokens=200, call_type="qa_self_consistency"
+            )
         except Exception:
             continue
         m = re.search(r"Final Answer:\s*\[?([A-D])\]?", resp or "", re.IGNORECASE)
@@ -597,7 +571,9 @@ async def self_consistency_check_mcq(item: QAItem, llm: LLM,
 
 
 __all__ = [
-    "QAStyle", "QAItem",
-    "generate_for_conv", "qa_item_to_sft_line",
+    "QAStyle",
+    "QAItem",
+    "generate_for_conv",
+    "qa_item_to_sft_line",
     "self_consistency_check_mcq",
 ]

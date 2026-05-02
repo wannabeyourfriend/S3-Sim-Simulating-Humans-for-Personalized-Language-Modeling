@@ -28,6 +28,7 @@ Profiles can be loaded from either:
 Judge model is taken from env `JUDGE_MODEL` (default: gpt-4.1-mini), distinct
 from the generator's MODEL_NAME to mitigate self-judging bias.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -75,6 +76,7 @@ def _load_profiles_jsonl(path: Path) -> dict:
 
 def _load_profiles_dir(path: Path) -> dict:
     from user_simulator.data import load_personas
+
     return {p.id: p for p in load_personas(path)}
 
 
@@ -100,10 +102,8 @@ def _summarize(results_path: Path, summary_path: Path) -> dict:
     fail_counts: Counter[str] = Counter()
     d5_dist: Counter[int | str] = Counter()
     d6_dist: Counter[str] = Counter()
-    by_ablation: Counter[tuple[str, str]] = Counter()  # (ablation, tier)
+    by_ablation: Counter[tuple[str, str]] = Counter()
 
-    # Conv ablation isn't in QCResult; we'd have to walk conv files to attribute.
-    # Keep summary lightweight for now.
     for line in results_path.read_text(encoding="utf-8").splitlines():
         if not line.strip():
             continue
@@ -140,7 +140,6 @@ async def main(args):
     results_path = out_dir / "qc_results.jsonl"
     summary_path = out_dir / "qc_summary.json"
 
-    # Load profiles
     profiles: dict = {}
     if args.profiles_jsonl:
         profiles = _load_profiles_jsonl(Path(args.profiles_jsonl))
@@ -149,29 +148,24 @@ async def main(args):
     else:
         logger.warning("No profiles source provided; D4 will fail for every conv.")
 
-    # Walk conversation files
     conv_files = sorted(conv_dir.rglob("*.json"))
     if args.sample:
         conv_files = conv_files[: args.sample]
     logger.info("Found %d conversation JSONs in %s", len(conv_files), conv_dir)
 
-    # Resume support
     existing = _read_existing_keys(results_path)
     if existing:
         logger.info("Resuming: %d existing results in %s", len(existing), results_path)
 
-    # LLM setup
     llm: LLM | None = None
     if not args.skip_judges:
         judge_model = os.getenv("JUDGE_MODEL") or args.judge_model
-        llm = LLM(model=judge_model, max_concurrent=args.concurrency,
-                  log_calls=args.log_calls)
+        llm = LLM(model=judge_model, max_concurrent=args.concurrency, log_calls=args.log_calls)
         logger.info("Judge model: %s; concurrency=%d", judge_model, args.concurrency)
     else:
         logger.info("Skipping judges (programmatic-only)")
 
-    counter = {"done": 0, "skipped": 0, "failed": 0,
-               "total": len(conv_files)}
+    counter = {"done": 0, "skipped": 0, "failed": 0, "total": len(conv_files)}
 
     file_lock = asyncio.Lock()
 
@@ -190,8 +184,7 @@ async def main(args):
 
         persona = profiles.get(conv.get("persona_id", ""))
         try:
-            result = await score_conversation(conv, persona, llm,
-                                              skip_judges=args.skip_judges)
+            result = await score_conversation(conv, persona, llm, skip_judges=args.skip_judges)
         except Exception as e:
             logger.exception("Score failed for %s: %s", path, e)
             counter["failed"] += 1
@@ -202,9 +195,13 @@ async def main(args):
             fh.flush()
         counter["done"] += 1
         if counter["done"] % 50 == 0:
-            logger.info("Progress: %d/%d done, %d skipped, %d failed",
-                        counter["done"], counter["total"],
-                        counter["skipped"], counter["failed"])
+            logger.info(
+                "Progress: %d/%d done, %d skipped, %d failed",
+                counter["done"],
+                counter["total"],
+                counter["skipped"],
+                counter["failed"],
+            )
 
     sem = asyncio.Semaphore(args.concurrency)
 
@@ -216,35 +213,52 @@ async def main(args):
     with open(results_path, "a", encoding="utf-8") as fh:
         await asyncio.gather(*[bounded(p, fh) for p in conv_files])
     elapsed = time.time() - t0
-    logger.info("Done in %.1fs: %d scored, %d skipped, %d failed",
-                elapsed, counter["done"], counter["skipped"], counter["failed"])
+    logger.info(
+        "Done in %.1fs: %d scored, %d skipped, %d failed",
+        elapsed,
+        counter["done"],
+        counter["skipped"],
+        counter["failed"],
+    )
 
     summary = _summarize(results_path, summary_path)
-    logger.info("Tier breakdown: %s (pass-rate=%.3f)",
-                summary["tier_counts"], summary["tier_pass_rate"])
+    logger.info(
+        "Tier breakdown: %s (pass-rate=%.3f)", summary["tier_counts"], summary["tier_pass_rate"]
+    )
     if llm is not None:
         logger.info("Judge LLM stats: %s", llm.stats)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Quality-check S³-Sim conversations")
-    parser.add_argument("--conversations-dir", required=True,
-                        help="Directory of conversation JSONs (recursive)")
-    parser.add_argument("--output-dir", default="output/qc/v1_demo",
-                        help="Where qc_results.jsonl + qc_summary.json go")
-    parser.add_argument("--profiles-jsonl",
-                        default="data/filterd_refined_profiles/summary_refined_profiles_us.jsonl",
-                        help="JSONL of personas (one per line)")
-    parser.add_argument("--profiles-dir", default=None,
-                        help="Alternative: YAML directory (legacy load_personas)")
-    parser.add_argument("--skip-judges", action="store_true",
-                        help="Skip D5/D6 LLM judges (programmatic only)")
-    parser.add_argument("--judge-model", default="gpt-4.1-mini",
-                        help="Override JUDGE_MODEL env var")
+    parser.add_argument(
+        "--conversations-dir", required=True, help="Directory of conversation JSONs (recursive)"
+    )
+    parser.add_argument(
+        "--output-dir",
+        default="output/qc/v1_demo",
+        help="Where qc_results.jsonl + qc_summary.json go",
+    )
+    parser.add_argument(
+        "--profiles-jsonl",
+        default="data/filterd_refined_profiles/summary_refined_profiles_us.jsonl",
+        help="JSONL of personas (one per line)",
+    )
+    parser.add_argument(
+        "--profiles-dir", default=None, help="Alternative: YAML directory (legacy load_personas)"
+    )
+    parser.add_argument(
+        "--skip-judges", action="store_true", help="Skip D5/D6 LLM judges (programmatic only)"
+    )
+    parser.add_argument(
+        "--judge-model", default="gpt-4.1-mini", help="Override JUDGE_MODEL env var"
+    )
     parser.add_argument("--concurrency", type=int, default=40)
-    parser.add_argument("--sample", type=int, default=None,
-                        help="Score only the first N conv files (smoke)")
-    parser.add_argument("--log-calls", action="store_true",
-                        help="JSONL-log every judge call to output/llm_logs/")
+    parser.add_argument(
+        "--sample", type=int, default=None, help="Score only the first N conv files (smoke)"
+    )
+    parser.add_argument(
+        "--log-calls", action="store_true", help="JSONL-log every judge call to output/llm_logs/"
+    )
     args = parser.parse_args()
     asyncio.run(main(args))

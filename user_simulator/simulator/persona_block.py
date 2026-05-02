@@ -3,6 +3,7 @@
 Pure formatting — no I/O, no LLM. Used by user_turn, rollout, and behavior
 selection to inject persona fields into prompt templates.
 """
+
 from __future__ import annotations
 
 import json

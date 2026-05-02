@@ -17,6 +17,7 @@ Behavior preserved from the three pre-refactor copies:
 Optional fields are included only when the session carries them, so the
 byte shape for each entry point is unchanged.
 """
+
 from __future__ import annotations
 
 import json
@@ -29,8 +30,9 @@ BASE_SYSTEM_INSTRUCTION = (
 )
 
 
-def build_sft_system_prompt(profile_summary: str = "", behavior_metadata: str = "",
-                            include_profile: bool = True) -> str:
+def build_sft_system_prompt(
+    profile_summary: str = "", behavior_metadata: str = "", include_profile: bool = True
+) -> str:
     """Build the SFT system prompt, optionally injecting user profile."""
     parts = [BASE_SYSTEM_INSTRUCTION]
     if include_profile and profile_summary:
@@ -66,7 +68,6 @@ def build_sft_instance(session: dict, config: AblationConfig) -> dict | None:
         if msg.get("role") in ("user", "assistant"):
             messages.append({"role": msg["role"], "content": msg["content"]})
 
-    # Metadata key order is byte-load-bearing — preserve historical ordering.
     metadata: dict = {
         "persona_id": session.get("persona_id", ""),
         "scenario_id": session.get("prompt_id", ""),

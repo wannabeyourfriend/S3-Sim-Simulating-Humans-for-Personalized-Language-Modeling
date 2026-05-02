@@ -23,6 +23,7 @@ Examples
     # use black instead of ruff
     python scripts/declutter.py --formatter "black -q -" tests/
 """
+
 from __future__ import annotations
 
 import argparse
@@ -38,8 +39,16 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 log = logging.getLogger(__name__)
 
-_SKIP_DIRS = {"__pycache__", ".venv", ".git", ".pytest_cache", ".mypy_cache",
-              "node_modules", "dist", "build"}
+_SKIP_DIRS = {
+    "__pycache__",
+    ".venv",
+    ".git",
+    ".pytest_cache",
+    ".mypy_cache",
+    "node_modules",
+    "dist",
+    "build",
+}
 
 
 def _strip_comments(src: str) -> str:
@@ -78,17 +87,18 @@ def _run_formatter(src: str, cmd: str) -> str:
     formatter output verbatim; raises if the formatter exits non-zero."""
     parts = shlex.split(cmd)
     proc = subprocess.run(
-        parts, input=src, capture_output=True, text=True, check=False,
+        parts,
+        input=src,
+        capture_output=True,
+        text=True,
+        check=False,
     )
     if proc.returncode != 0:
-        raise RuntimeError(
-            f"formatter {cmd!r} exited {proc.returncode}: {proc.stderr.strip()}"
-        )
+        raise RuntimeError(f"formatter {cmd!r} exited {proc.returncode}: {proc.stderr.strip()}")
     return proc.stdout
 
 
-def _process_file(path: Path, formatter: str | None,
-                  dry_run: bool) -> tuple[bool, str]:
+def _process_file(path: Path, formatter: str | None, dry_run: bool) -> tuple[bool, str]:
     """Apply the pipeline to one file. Returns (changed, error_or_empty)."""
     try:
         original = path.read_text(encoding="utf-8")
@@ -134,15 +144,16 @@ def _iter_py_files(roots: list[Path]):
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("paths", nargs="+", type=Path,
-                        help="File or directory paths to process")
-    parser.add_argument("--formatter", default="ruff format -q -",
-                        help="External formatter to pipe through (stdin → stdout). "
-                             "Default: 'ruff format -q -'")
-    parser.add_argument("--no-format", action="store_true",
-                        help="Skip the formatter step")
-    parser.add_argument("--dry-run", action="store_true",
-                        help="Write to stdout, leave files untouched")
+    parser.add_argument("paths", nargs="+", type=Path, help="File or directory paths to process")
+    parser.add_argument(
+        "--formatter",
+        default="ruff format -q -",
+        help="External formatter to pipe through (stdin → stdout). Default: 'ruff format -q -'",
+    )
+    parser.add_argument("--no-format", action="store_true", help="Skip the formatter step")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Write to stdout, leave files untouched"
+    )
     args = parser.parse_args(argv)
 
     formatter = None if args.no_format else args.formatter
@@ -162,8 +173,7 @@ def main(argv: list[str] | None = None) -> int:
         else:
             log.debug("OK    %s", path)
 
-    log.info("\n%d files scanned · %d changed · %d failed",
-             n_total, n_changed, n_failed)
+    log.info("\n%d files scanned · %d changed · %d failed", n_total, n_changed, n_failed)
     return 1 if n_failed else 0
 
 

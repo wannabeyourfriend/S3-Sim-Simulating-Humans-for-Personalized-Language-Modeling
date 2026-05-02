@@ -11,6 +11,7 @@ The disclosure stage is normally inferred from the conversation length and
 the behavior's cognitive_delegation_level, but can be force-overridden via
 `behavior["simulator_control"]["force_disclosure_stage"]`.
 """
+
 from __future__ import annotations
 
 import re
@@ -32,8 +33,11 @@ def _infer_disclosure_stage(behavior: dict, conversation: list[dict]) -> str:
 
 def _extract_bullets(template: str, title: str) -> list[str]:
     m = re.search(rf"\*\*{re.escape(title)}:\*\*(.*?)(?:\n\s*\*\*|$)", template, re.DOTALL)
-    return [ln.strip()[2:].strip() for ln in (m.group(1) if m else "").splitlines()
-            if ln.strip().startswith("- ")]
+    return [
+        ln.strip()[2:].strip()
+        for ln in (m.group(1) if m else "").splitlines()
+        if ln.strip().startswith("- ")
+    ]
 
 
 def _make_behavior_block(behavior: dict | None, conversation: list[dict]) -> tuple[str, str, str]:
@@ -51,9 +55,9 @@ def _make_behavior_block(behavior: dict | None, conversation: list[dict]) -> tup
         it.get("request_type", "").strip()
         for it in (behavior.get("few_shot_examples") or [])
         if isinstance(it, dict) and it.get("request_type", "").strip()
-    ][:clip[0]]
-    rules = _extract_bullets(template, "Authenticity rules")[:clip[1]]
-    guidance = _extract_bullets(template, "Request type selection")[:clip[1]]
+    ][: clip[0]]
+    rules = _extract_bullets(template, "Authenticity rules")[: clip[1]]
+    guidance = _extract_bullets(template, "Request type selection")[: clip[1]]
 
     iq_m = re.search(r"\*\*Internal question:\*\*\s*(.+)", template)
     internal_q = iq_m.group(1).strip() if iq_m and stage == "full" else ""
@@ -84,11 +88,17 @@ def _make_behavior_block(behavior: dict | None, conversation: list[dict]) -> tup
         f"<public_intent>\n{(behavior.get('description') or '').strip()}\n</public_intent>",
     ]
     if request_types:
-        lines.append(f"<public_request_types>\n{chr(10).join('- ' + t for t in request_types)}\n</public_request_types>")
+        lines.append(
+            f"<public_request_types>\n{chr(10).join('- ' + t for t in request_types)}\n</public_request_types>"
+        )
     if guidance:
-        lines.append(f"<public_selection_guidance>\n{chr(10).join('- ' + g for g in guidance)}\n</public_selection_guidance>")
+        lines.append(
+            f"<public_selection_guidance>\n{chr(10).join('- ' + g for g in guidance)}\n</public_selection_guidance>"
+        )
     if rules:
-        lines.append(f"<public_authenticity_rules>\n{chr(10).join('- ' + r for r in rules)}\n</public_authenticity_rules>")
+        lines.append(
+            f"<public_authenticity_rules>\n{chr(10).join('- ' + r for r in rules)}\n</public_authenticity_rules>"
+        )
     if ex_lines:
         lines.append(f"<progressive_examples>\n{chr(10).join(ex_lines)}\n</progressive_examples>")
     if internal_q:

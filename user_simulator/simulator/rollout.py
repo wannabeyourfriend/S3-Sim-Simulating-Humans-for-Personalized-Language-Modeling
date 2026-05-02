@@ -4,6 +4,7 @@ Threads a user simulator (stateful or vanilla) and an assistant strategy
 (oracle, oracle_profile_only, vanilla) through up to `max_turns` turns,
 recording the conversation, user_state trajectory, and behavior trajectory.
 """
+
 from __future__ import annotations
 
 import logging
@@ -16,10 +17,12 @@ from user_simulator.simulator.behavior.selection import (
     _select_behavior_with_controller,
 )
 from user_simulator.simulator.persona_block import (
-    _persona_behavior_metadata_str, _persona_profile_summary,
+    _persona_behavior_metadata_str,
+    _persona_profile_summary,
 )
 from user_simulator.simulator.user_turn import (
-    generate_user_turn, generate_user_turn_vanilla,
+    generate_user_turn,
+    generate_user_turn_vanilla,
 )
 
 logger = logging.getLogger(__name__)
@@ -69,8 +72,12 @@ def _guess_intent(prompt: str) -> str:
 
 
 async def rollout_conversation(
-    persona: Persona, initial_prompt: str, prompt_id: str,
-    llm: LLM, max_turns: int = 15, min_turns: int = 5,
+    persona: Persona,
+    initial_prompt: str,
+    prompt_id: str,
+    llm: LLM,
+    max_turns: int = 15,
+    min_turns: int = 5,
     config: AblationConfig | None = None,
 ) -> dict:
     """Run a full multi-turn conversation rollout.
@@ -92,38 +99,50 @@ async def rollout_conversation(
     bm_str = _persona_behavior_metadata_str(persona)
 
     for turn in range(1, max_turns + 1):
-        # ── Assistant turn ──
         if config.assistant_strategy == "oracle":
-            asst_prompt = render(_TMPL_ASST_ORACLE,
-                                profile_summary=profile_summary,
-                                behavior_metadata=bm_str,
-                                conversation_prefix=fmt_conversation(conversation),
-                                ground_truth_user_state=current_state or "N/A")
+            asst_prompt = render(
+                _TMPL_ASST_ORACLE,
+                profile_summary=profile_summary,
+                behavior_metadata=bm_str,
+                conversation_prefix=fmt_conversation(conversation),
+                ground_truth_user_state=current_state or "N/A",
+            )
         elif config.assistant_strategy == "oracle_profile_only":
-            asst_prompt = render(_TMPL_ASST_ORACLE_PROFILE_ONLY,
-                                profile_summary=profile_summary,
-                                behavior_metadata=bm_str,
-                                conversation_prefix=fmt_conversation(conversation))
+            asst_prompt = render(
+                _TMPL_ASST_ORACLE_PROFILE_ONLY,
+                profile_summary=profile_summary,
+                behavior_metadata=bm_str,
+                conversation_prefix=fmt_conversation(conversation),
+            )
         else:
-            asst_prompt = render(_TMPL_ASST_VANILLA,
-                                conversation_prefix=fmt_conversation(conversation))
+            asst_prompt = render(
+                _TMPL_ASST_VANILLA, conversation_prefix=fmt_conversation(conversation)
+            )
         asst_response = await llm.chat(
-            [{"role": "system", "content": asst_prompt},
-             {"role": "user", "content": "Generate your response."}],
+            [
+                {"role": "system", "content": asst_prompt},
+                {"role": "user", "content": "Generate your response."},
+            ],
             temperature=config.assistant_temperature,
-            max_tokens=config.assistant_max_tokens)
+            max_tokens=config.assistant_max_tokens,
+        )
         conversation.append({"role": "assistant", "content": asst_response})
 
         if turn >= max_turns:
             break
 
-        # ── Behavior selection ──
         behavior = None
         ctrl_src = "disabled"
         if config.use_behavior_injection:
             ctrl = await _select_behavior_with_controller(
-                persona, conversation, current_state,
-                turn, max_turns, bh_trajectory, llm, config=config,
+                persona,
+                conversation,
+                current_state,
+                turn,
+                max_turns,
+                bh_trajectory,
+                llm,
+                config=config,
             )
             behavior = ctrl["behavior"]
             ctrl_src = ctrl["controller_source"]
@@ -131,23 +150,31 @@ async def rollout_conversation(
         behavior_block_text = ""
         if behavior:
             behavior_block_text, _, _ = _make_behavior_block(behavior, conversation)
-            bh_trajectory.append({
-                "turn": turn,
-                "behavior": behavior.get("name", ""),
-                "behavior_id": behavior.get("behavior_id", ""),
-                "controller_source": ctrl_src,
-                "guidance_block": behavior_block_text,
-            })
+            bh_trajectory.append(
+                {
+                    "turn": turn,
+                    "behavior": behavior.get("name", ""),
+                    "behavior_id": behavior.get("behavior_id", ""),
+                    "controller_source": ctrl_src,
+                    "guidance_block": behavior_block_text,
+                }
+            )
 
-        # ── User turn ──
         if config.use_user_state:
             result = await generate_user_turn(
-                persona, conversation, current_state, llm, behavior=behavior,
-                turn_number=turn, max_turns=max_turns, config=config)
+                persona,
+                conversation,
+                current_state,
+                llm,
+                behavior=behavior,
+                turn_number=turn,
+                max_turns=max_turns,
+                config=config,
+            )
         else:
             result = await generate_user_turn_vanilla(
-                persona, conversation, llm,
-                history_window=config.history_window, config=config)
+                persona, conversation, llm, history_window=config.history_window, config=config
+            )
 
         if result.get("_terminated"):
             termination = result["_terminated"]
@@ -157,13 +184,15 @@ async def rollout_conversation(
         if config.use_user_state and result["user_state"]:
             current_state = result["user_state"]
 
-        us_trajectory.append({
-            "turn": turn,
-            "think": result.get("think", ""),
-            "user_state": current_state if config.use_user_state else "",
-            "behavior": behavior.get("name", "") if behavior else "",
-            "prompt_template": "user_s3" if config.use_user_state else "user_vanilla",
-        })
+        us_trajectory.append(
+            {
+                "turn": turn,
+                "think": result.get("think", ""),
+                "user_state": current_state if config.use_user_state else "",
+                "behavior": behavior.get("name", "") if behavior else "",
+                "prompt_template": "user_s3" if config.use_user_state else "user_vanilla",
+            }
+        )
 
         if result["message"]:
             conversation.append({"role": "user", "content": result["message"]})

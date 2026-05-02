@@ -13,6 +13,7 @@ Both implement the subset of the `LLM` interface that the rollout uses:
 `chat()`, `chat_json()`, `model`, `stats`. They do NOT implement
 the optional JSONL call logging — that's an orthogonal concern.
 """
+
 from __future__ import annotations
 
 import json
@@ -113,12 +114,12 @@ class RecordingLLM:
         await rollout_conversation(persona, prompt, "p_0", rec, config=cfg)
     """
 
-    inner: Any  # real LLM-shaped object
+    inner: Any
     recording_path: Path
 
     def __post_init__(self) -> None:
         self.recording_path.parent.mkdir(parents=True, exist_ok=True)
-        # truncate
+
         self.recording_path.write_text("", encoding="utf-8")
 
     @property

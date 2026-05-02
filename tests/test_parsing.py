@@ -4,6 +4,7 @@ Targets `user_simulator.simulator._parse_user_output`, `_extract_json`,
 `_extract_end_signal`, `_strip_tags`. These are pure functions with no LLM
 dependency — fast and deterministic.
 """
+
 from __future__ import annotations
 
 import json
@@ -17,8 +18,6 @@ from user_simulator.simulator import (
     _strip_tags,
 )
 
-
-# ── _extract_end_signal ───────────────────────────────────────────────────────
 
 class TestExtractEndSignal:
     def test_leading_end_tag_strips_and_signals(self):
@@ -52,8 +51,6 @@ class TestExtractEndSignal:
         assert end is True
 
 
-# ── _strip_tags ───────────────────────────────────────────────────────────────
-
 class TestStripTags:
     @pytest.mark.parametrize("tag", ["think", "user_state", "message", "report", "state"])
     def test_strips_known_tags(self, tag):
@@ -67,8 +64,6 @@ class TestStripTags:
         out = _strip_tags("<custom>kept</custom>")
         assert out == "<custom>kept</custom>"
 
-
-# ── _extract_json ─────────────────────────────────────────────────────────────
 
 class TestExtractJson:
     def test_pure_json_object(self):
@@ -86,8 +81,6 @@ class TestExtractJson:
         with pytest.raises(json.JSONDecodeError):
             _extract_json("not json at all")
 
-
-# ── _parse_user_output: 3 fallback strategies for <user_state> ────────────────
 
 class TestParseUserOutputUserState:
     def test_closed_user_state_tags(self):
@@ -112,7 +105,7 @@ class TestParseUserOutputUserState:
         assert out["message"] == "The actual user message."
 
     def test_no_tags_recognizes_state_report_header(self):
-        # Body must be >80 chars to clear the heuristic threshold.
+
         body = "# User State Report\n" + "Some descriptive content. " * 20
         raw = body + "\n<message>Hello.</message>"
         out = _parse_user_output(raw)
@@ -120,7 +113,7 @@ class TestParseUserOutputUserState:
         assert out["message"] == "Hello."
 
     def test_short_body_without_tags_not_promoted(self):
-        # Short body must NOT be promoted to user_state — guards against noise.
+
         raw = "# User State Report\nshort\n<message>hi</message>"
         out = _parse_user_output(raw)
         assert out["user_state"] == ""
@@ -131,8 +124,6 @@ class TestParseUserOutputUserState:
         assert out["message"] == ""
         assert out["wants_to_end"] is False
 
-
-# ── _parse_user_output: <think>, <message>, end-signal integration ────────────
 
 class TestParseUserOutputThinkAndMessage:
     def test_think_block_extracted(self):

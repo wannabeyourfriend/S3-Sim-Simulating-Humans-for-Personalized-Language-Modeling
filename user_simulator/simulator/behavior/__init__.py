@@ -8,6 +8,7 @@ concerns:
   * selection  — pick which behavior fires this turn (random or LLM)
   * block      — render the selected behavior into the XML guidance block
 """
+
 from user_simulator.simulator.behavior.library import (
     _BEHAVIORS,
     _BEHAVIOR_ORDER,

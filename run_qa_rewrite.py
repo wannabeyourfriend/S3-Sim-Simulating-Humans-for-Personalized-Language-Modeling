@@ -16,6 +16,7 @@ Usage:
         --rewriter-model gpt-4o \\
         --concurrency 30
 """
+
 from __future__ import annotations
 
 import argparse
@@ -29,8 +30,6 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
 
-
-# Patterns shared with user_simulator/qa.py
 _PERSONAMEM_RECALL_SUFFIX = (
     " Please recall my related preferences from our conversation history "
     "to give personalized responses."
@@ -49,10 +48,9 @@ _PERSONAMEM_OPTIONS_OUTRO = (
 
 def _personamem_options_block(options: list[str]) -> str:
     parts = [f"{chr(65 + i)}. {opt}" for i, opt in enumerate(options)]
-    return f"{_PERSONAMEM_OPTIONS_INTRO}\n\n" + "\n".join(parts) + f"\n\n{_PERSONAMEM_OPTIONS_OUTRO}"
-
-
-# ── reverse-engineer v1 → raw fields ─────────────────────────────────────────
+    return (
+        f"{_PERSONAMEM_OPTIONS_INTRO}\n\n" + "\n".join(parts) + f"\n\n{_PERSONAMEM_OPTIONS_OUTRO}"
+    )
 
 
 _OPTION_RE = re.compile(r"^([A-D])\.\s+(.*)$", re.MULTILINE)
@@ -71,8 +69,7 @@ def _parse_personamem(item: dict, ctx: dict | None = None) -> dict | None:
     profile_block = m.group(1).strip() if m else ""
     history = msgs[1:-2]
     conv_excerpt = "\n".join(
-        f"{('User' if m['role'] == 'user' else 'Assistant')}: {m['content']}"
-        for m in history
+        f"{('User' if m['role'] == 'user' else 'Assistant')}: {m['content']}" for m in history
     )
     last_user = msgs[-2]["content"]
     if _PERSONAMEM_RECALL_SUFFIX in last_user:
@@ -84,7 +81,7 @@ def _parse_personamem(item: dict, ctx: dict | None = None) -> dict | None:
         if not m:
             return None
         user_query = last_user[: m.start()].strip()
-        opts_part = last_user[m.start():]
+        opts_part = last_user[m.start() :]
     options: list[str] = ["", "", "", ""]
     for letter, text in _OPTION_RE.findall(opts_part):
         idx = ord(letter) - ord("A")
@@ -124,12 +121,12 @@ def _parse_bigtom(item: dict, ctx: dict | None = None) -> dict | None:
         return None
     user_msg = msgs[1]["content"]
     ctx = ctx or {}
-    # The qa.py builder emits: "{narrative}\n\n{question}\n\nChoose one of the following:\na) ...\nb) ..."
+
     m = re.search(r"\n\nChoose one of the following:\n", user_msg)
     if not m:
         return None
     pre = user_msg[: m.start()]
-    post = user_msg[m.end():]
+    post = user_msg[m.end() :]
     parts = pre.split("\n\n", 1)
     if len(parts) != 2:
         return None
@@ -170,7 +167,9 @@ def _parse_lamp(item: dict, ctx: dict | None = None) -> dict | None:
     query = m.group(1).strip()
     gold = msgs[-1]["content"].strip()
     family = item["metadata"].get("task_family", "tag_classify")
-    profile_items_str = "\n".join(f"- input: {it['input']} | output: {it['output']}" for it in items)
+    profile_items_str = "\n".join(
+        f"- input: {it['input']} | output: {it['output']}" for it in items
+    )
     return {
         "profile_block": ctx.get("profile_block", ""),
         "profile_items": items,
@@ -179,9 +178,6 @@ def _parse_lamp(item: dict, ctx: dict | None = None) -> dict | None:
         "gold_target": gold,
         "task_family": family,
     }
-
-
-# ── render v2 SFT line ────────────────────────────────────────────────────────
 
 
 def _render_personamem_v2(orig_item: dict, parsed: dict, rewritten: dict) -> dict | None:
@@ -197,16 +193,12 @@ def _render_personamem_v2(orig_item: dict, parsed: dict, rewritten: dict) -> dic
     if not new_query or not answer:
         return None
     if f"Final Answer: {correct_letter}" not in answer:
-        # The trace must end with the canonical final-answer line
         answer = f"{answer}\n\nFinal Answer: {correct_letter}"
 
     sys_msg = orig_item["messages"][0]["content"]
     history = orig_item["messages"][1:-2]
     user_msg = (
-        new_query.rstrip()
-        + _PERSONAMEM_RECALL_SUFFIX
-        + "\n\n"
-        + _personamem_options_block(options)
+        new_query.rstrip() + _PERSONAMEM_RECALL_SUFFIX + "\n\n" + _personamem_options_block(options)
     )
     new_messages = [{"role": "system", "content": sys_msg}]
     new_messages.extend(history)
@@ -226,7 +218,7 @@ def _render_prefeval_v2(orig_item: dict, parsed: dict, rewritten: dict) -> dict 
     ack_quote = str(rewritten.get("acknowledge_quote", "")).strip()
     if not new_pref or not new_q or not new_resp:
         return None
-    # Acknowledge gate: same logic as user_simulator/qa.py
+
     resp_lower = new_resp.lower()
     if not (ack_quote and ack_quote.lower() in resp_lower):
         pref_tokens = {t.lower().strip(".,!?;:\"'") for t in new_pref.split() if len(t) >= 4}
@@ -261,11 +253,7 @@ def _render_bigtom_v2(orig_item: dict, parsed: dict, rewritten: dict) -> dict | 
     expected_tail = f"Answer:{correct_letter}){correct_text}"
     if expected_tail not in answer:
         answer = f"{answer}\n\n{expected_tail}"
-    user_text = (
-        f"{narrative}\n\n{question}\n\n"
-        f"Choose one of the following:\n"
-        f"a) {opt_a}\nb) {opt_b}"
-    )
+    user_text = f"{narrative}\n\n{question}\n\nChoose one of the following:\na) {opt_a}\nb) {opt_b}"
     sys_msg = orig_item["messages"][0]["content"]
     new_messages = [
         {"role": "system", "content": sys_msg},
@@ -298,10 +286,10 @@ def _render_lamp_v2(orig_item: dict, parsed: dict, rewritten: dict) -> dict | No
     gold = parsed["gold_target"]
     if not query or not answer:
         return None
-    # Ensure the gold appears on the last line (eval scorer is lenient: substring + token-overlap)
+
     answer = answer.rstrip()
     last_line = answer.splitlines()[-1].strip() if answer else ""
-    # If the final line already ends with the gold (e.g., "...about finance."), don't double-append
+
     if not last_line.lower().endswith(gold.lower()):
         answer = answer + f"\n{gold}"
     user_text = (
@@ -317,12 +305,9 @@ def _render_lamp_v2(orig_item: dict, parsed: dict, rewritten: dict) -> dict | No
     ]
     md = dict(orig_item["metadata"])
     md["v1_query"] = parsed["query"]
-    md["gold_target"] = gold  # so the eval scorer can match against the label, not the trace
+    md["gold_target"] = gold
     md["rewrite_model"] = "gpt-4o"
     return {"messages": new_messages, "metadata": md}
-
-
-# ── style dispatch ────────────────────────────────────────────────────────────
 
 
 _PARSERS = {
@@ -349,10 +334,9 @@ _PROMPTS = {
 
 def _render_prompt(style: str, parsed: dict, tmpl: str) -> str:
     from user_simulator.prompts import render
+
     if style == "personamem_mcq":
-        opts_block = "\n".join(
-            f"{chr(65 + i)}. {opt}" for i, opt in enumerate(parsed["options"])
-        )
+        opts_block = "\n".join(f"{chr(65 + i)}. {opt}" for i, opt in enumerate(parsed["options"]))
         return render(
             tmpl,
             profile_block=parsed["profile_block"],
@@ -394,8 +378,9 @@ def _render_prompt(style: str, parsed: dict, tmpl: str) -> str:
     raise ValueError(style)
 
 
-async def _rewrite_one(style: str, orig_item: dict, tmpl: str, llm,
-                       ctx_lookup: dict | None = None) -> dict | None:
+async def _rewrite_one(
+    style: str, orig_item: dict, tmpl: str, llm, ctx_lookup: dict | None = None
+) -> dict | None:
     md = orig_item.get("metadata", {})
     key = (md.get("persona_id", ""), md.get("scenario_id", ""))
     ctx = (ctx_lookup or {}).get(key)
@@ -405,15 +390,22 @@ async def _rewrite_one(style: str, orig_item: dict, tmpl: str, llm,
     sys_prompt = _render_prompt(style, parsed, tmpl)
     try:
         rewritten = await llm.chat_json(
-            [{"role": "system", "content": sys_prompt},
-             {"role": "user", "content": "Generate the rewritten JSON now."}],
-            temperature=0.7, max_tokens=2200, call_type=f"rewrite_{style}",
+            [
+                {"role": "system", "content": sys_prompt},
+                {"role": "user", "content": "Generate the rewritten JSON now."},
+            ],
+            temperature=0.7,
+            max_tokens=2200,
+            call_type=f"rewrite_{style}",
         )
     except Exception as e:
-        logger.warning("rewrite call failed for %s/%s/%s: %s",
-                       orig_item["metadata"].get("persona_id"),
-                       orig_item["metadata"].get("scenario_id"),
-                       style, e)
+        logger.warning(
+            "rewrite call failed for %s/%s/%s: %s",
+            orig_item["metadata"].get("persona_id"),
+            orig_item["metadata"].get("scenario_id"),
+            style,
+            e,
+        )
         return None
     return _RENDERERS[style](orig_item, parsed, rewritten)
 
@@ -440,8 +432,7 @@ def _build_ctx_lookup(conv_root: Path) -> dict:
         prof = d.get("profile_summary", "") or ""
         conv = d.get("conversation", []) or []
         excerpt = "\n".join(
-            f"{('User' if m['role'] == 'user' else 'Assistant')}: {m['content']}"
-            for m in conv[:6]
+            f"{('User' if m['role'] == 'user' else 'Assistant')}: {m['content']}" for m in conv[:6]
         )
         lookup[(pid, sid)] = {"profile_block": prof, "conversation_excerpt": excerpt}
     logger.info("Built context lookup for %d (persona, scenario) pairs", len(lookup))
@@ -471,7 +462,9 @@ async def main(args):
         if not in_path.exists():
             logger.warning("Skipping %s: no input file at %s", style, in_path)
             continue
-        items = [json.loads(l) for l in in_path.read_text(encoding="utf-8").splitlines() if l.strip()]
+        items = [
+            json.loads(l) for l in in_path.read_text(encoding="utf-8").splitlines() if l.strip()
+        ]
         if args.sample:
             items = items[: args.sample]
         logger.info("Style %s: %d items in", style, len(items))
@@ -494,7 +487,6 @@ async def main(args):
         await asyncio.gather(*[bounded(i, it) for i, it in enumerate(items)])
         elapsed = time.time() - t0
 
-        # Write out (skip None)
         n_written = 0
         with open(out_path, "w", encoding="utf-8") as f:
             for r in results:
@@ -507,12 +499,18 @@ async def main(args):
         counter["rewrite_fail"] += n_dropped
         logger.info(
             "  %s: %d/%d written → %s (dropped=%d, %.1fs)",
-            style, n_written, len(items), out_path, n_dropped, elapsed,
+            style,
+            n_written,
+            len(items),
+            out_path,
+            n_dropped,
+            elapsed,
         )
 
     logger.info(
         "Done: %d in, %d out (%.1f%% kept), %d dropped",
-        counter["in"], counter["out"],
+        counter["in"],
+        counter["out"],
         100 * counter["out"] / max(counter["in"], 1),
         counter["rewrite_fail"],
     )
@@ -523,16 +521,23 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Rewrite v1 QA items into harder v2 items")
     parser.add_argument("--qa-dir", required=True, help="Directory with v1 {style}.jsonl files")
     parser.add_argument("--output-dir", required=True, help="Where v2 {style}.jsonl files go")
-    parser.add_argument("--conversations-dir", default=None,
-                        help="Root dir of source conversation JSONs (used to inject "
-                             "profile_summary + conversation_excerpt into rewrite "
-                             "prompts for prefeval/bigtom/lamp).")
+    parser.add_argument(
+        "--conversations-dir",
+        default=None,
+        help="Root dir of source conversation JSONs (used to inject "
+        "profile_summary + conversation_excerpt into rewrite "
+        "prompts for prefeval/bigtom/lamp).",
+    )
     parser.add_argument("--rewriter-model", default="gpt-4o")
-    parser.add_argument("--styles", nargs="+",
-                        default=["personamem_mcq", "prefeval_gen", "bigtom_tom", "lamp_cls"],
-                        choices=["personamem_mcq", "prefeval_gen", "bigtom_tom", "lamp_cls"])
-    parser.add_argument("--sample", type=int, default=None,
-                        help="Process only first N items per style (smoke)")
+    parser.add_argument(
+        "--styles",
+        nargs="+",
+        default=["personamem_mcq", "prefeval_gen", "bigtom_tom", "lamp_cls"],
+        choices=["personamem_mcq", "prefeval_gen", "bigtom_tom", "lamp_cls"],
+    )
+    parser.add_argument(
+        "--sample", type=int, default=None, help="Process only first N items per style (smoke)"
+    )
     parser.add_argument("--concurrency", type=int, default=30)
     args = parser.parse_args()
     asyncio.run(main(args))

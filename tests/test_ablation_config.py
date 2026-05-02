@@ -1,4 +1,5 @@
 """Unit tests for AblationConfig — including the consolidated LLM hyperparameters."""
+
 from __future__ import annotations
 
 import pytest
@@ -9,8 +10,9 @@ from user_simulator.ablation import AblationConfig
 class TestFactoryDefaults:
     """Each factory carries the same hyperparameter defaults."""
 
-    @pytest.fixture(params=["full", "no_privilege", "no_behavior", "no_state",
-                            "oracle_profile_only"])
+    @pytest.fixture(
+        params=["full", "no_privilege", "no_behavior", "no_state", "oracle_profile_only"]
+    )
     def config(self, request):
         return AblationConfig.from_name(request.param)
 
@@ -80,5 +82,5 @@ class TestOverrides:
         assert c.user_temperature == 0.3
         assert c.assistant_max_tokens == 512
         assert c.controller_max_tokens == 256
-        # Untouched fields stay at defaults
+
         assert c.user_max_tokens == 2048

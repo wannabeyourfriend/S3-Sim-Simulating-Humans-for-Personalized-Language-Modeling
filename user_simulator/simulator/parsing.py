@@ -11,6 +11,7 @@ the message. Parsing is fault-tolerant: the user_state extractor falls back
 through three strategies (closed tags → unclosed tag → header heuristic) so a
 single missing close-tag doesn't lose a turn.
 """
+
 from __future__ import annotations
 
 import json
@@ -41,7 +42,7 @@ def _extract_end_signal(msg: str) -> tuple[str, bool]:
     msg = msg.strip()
     for tag, is_end in [("<|End Conversation|>", True), ("<|Continue Conversation|>", False)]:
         if msg.startswith(tag):
-            return msg[len(tag):].strip(), is_end
+            return msg[len(tag) :].strip(), is_end
     if "\n" in msg:
         first, rest = msg.split("\n", 1)
         first = first.strip()

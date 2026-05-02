@@ -17,6 +17,7 @@ The legacy private names (`_TMPL_USER_S3`, `_make_behavior_block`,
 from `user_simulator.simulator` directly. The next phase will migrate test
 imports to the new public locations.
 """
+
 from user_simulator.simulator.rollout import (
     rollout_conversation,
     _INITIAL_STATE,

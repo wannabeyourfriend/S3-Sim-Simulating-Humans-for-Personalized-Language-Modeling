@@ -4,6 +4,7 @@ Locks down the byte shape of SFT JSONL lines so the dedupe of the three
 pre-refactor copies (run_rollout.py, run_deep_scenario_rollout.py,
 pipeline.py) is verifiable.
 """
+
 from __future__ import annotations
 
 import json
@@ -53,9 +54,13 @@ class TestRolloutShape:
     def test_metadata_keys_match_legacy_run_rollout_order(self):
         config = AblationConfig.full()
         out = build_sft_instance(_basic_session(), config)
-        # Order matters — JSON serialisation preserves dict insertion order.
+
         assert list(out["metadata"].keys()) == [
-            "persona_id", "scenario_id", "num_turns", "termination", "ablation",
+            "persona_id",
+            "scenario_id",
+            "num_turns",
+            "termination",
+            "ablation",
         ]
         assert out["metadata"]["ablation"] == "full"
 
@@ -93,16 +98,21 @@ class TestDeepScenarioShape:
             source="deep_scenario",
         )
         out = build_sft_instance(session, AblationConfig.full())
-        # Order: persona_id, scenario_id, scenario_category, num_turns, ...
+
         assert list(out["metadata"].keys()) == [
-            "persona_id", "scenario_id", "scenario_category",
-            "num_turns", "termination", "ablation", "source",
+            "persona_id",
+            "scenario_id",
+            "scenario_category",
+            "num_turns",
+            "termination",
+            "ablation",
+            "source",
         ]
         assert out["metadata"]["scenario_category"] == "career_advice"
         assert out["metadata"]["source"] == "deep_scenario"
 
     def test_empty_scenario_category_still_included(self):
-        # Pre-refactor: deep_scenario emitted scenario_category even when "".
+
         session = _basic_session(
             scenario_category="",
             source="deep_scenario",
@@ -112,7 +122,7 @@ class TestDeepScenarioShape:
         assert out["metadata"]["scenario_category"] == ""
 
     def test_source_omitted_when_session_has_none(self):
-        # run_rollout.py never sets source — must not appear in metadata.
+
         session = _basic_session()
         out = build_sft_instance(session, AblationConfig.full())
         assert "source" not in out["metadata"]
@@ -122,7 +132,7 @@ class TestBehaviorMetadataSerialisation:
     def test_dict_metadata_pretty_printed_into_system_prompt(self):
         session = _basic_session(behavioral_metadata={"a": 1, "b": [2, 3]})
         out = build_sft_instance(session, AblationConfig.full())
-        # Pretty-printed JSON inside the <behavior_metadata> block.
+
         sysmsg = out["messages"][0]["content"]
         assert json.dumps({"a": 1, "b": [2, 3]}, indent=2) in sysmsg
 

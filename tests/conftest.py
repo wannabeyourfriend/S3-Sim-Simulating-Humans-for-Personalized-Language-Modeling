@@ -1,4 +1,5 @@
 """Shared pytest fixtures for the S³-Sim test suite."""
+
 from __future__ import annotations
 
 import sys
