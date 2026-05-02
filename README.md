@@ -14,62 +14,28 @@ state implicitly from observable history alone.
 
 ---
 
-## Method at a glance
+## Method
 
-Generation is a stateful POMDP. At each turn $t$ the simulator carries a
-user state $s_t = \langle U,\; C,\; B_t \rangle$:
+Each turn, the simulator carries a latent user state of three parts:
+an immutable **persona profile**, a fixed **scenario context**, and a
+per-turn **behavioral mode** sampled by an LLM controller. Utterances
+are produced as `persona → behavior → message`, so strategic intent
+is decoupled from surface tokens.
 
-| Component | Meaning | Refresh |
-|-----------|---------|---------|
-| **U**     | Immutable persona profile (demographics, traits, behavioral metadata) | once, per persona |
-| **C**     | Conversational scenario / functional context | once, per session |
-| **B_t**   | Dynamic behavioral mode (epistemic deepening, self-disclosure, …) | sampled every turn |
+A privileged **oracle assistant** with full visibility into the user
+state generates the assistant turn. The student model is fine-tuned
+via SFT on the observable conversation history alone — forcing it
+to reconstruct latent user dynamics implicitly at inference time.
 
-Utterances follow a two-stage causal chain $U \to B_t \to m_t$ that
-decouples strategic intent from surface tokens. A privileged
-**oracle assistant** with full visibility into $s_t$ generates expert
-responses; the student is fine-tuned via SFT on observable history
-$H_{<t}$ alone, minimising
+Five named ablations isolate the contribution of each axis:
 
-$$
-\mathcal{L}(\phi) \;=\; -\,\mathbb{E}_{(H_{<t},\,a_t)\sim\mathcal{D}}\bigl[\log P_\phi(a_t\mid H_{<t})\bigr]
-$$
-
-— forcing the student to *implicitly reconstruct* latent dynamics.
-
-```text
-                ┌──────────────────────────────────┐
-                │        Persona library U         │
-                └───────────────┬──────────────────┘
-                                ▼
-   ┌──────────────────────────────────────────────────────┐
-   │  Behavior controller          (LLM, sampled per turn)│
-   │  ─────────────────────────────────────────────────── │
-   │  picks B_t ∈ behavior library given persona, state,  │
-   │  conversation prefix and previous behavior history   │
-   └────────┬───────────────────────────┬─────────────────┘
-            ▼                           ▼
-   ┌────────────────────┐     ┌────────────────────────┐
-   │  User simulator    │ ⇄   │  Oracle assistant      │
-   │  (state + B_t)     │     │  (profile + state)     │
-   └────────────────────┘     └────────────────────────┘
-            │                           │
-            └────────────┬──────────────┘
-                         ▼
-                ┌──────────────────┐
-                │  Multi-turn JSON │  →  QC tiers (D1–D6)  →  SFT JSONL
-                └──────────────────┘
-```
-
-The five canonical ablations decompose the contribution of each axis:
-
-| Ablation              | User simulator        | Assistant strategy        | What it isolates              |
-|-----------------------|-----------------------|---------------------------|-------------------------------|
-| `full`                | state + behavior      | oracle (profile + state)  | full pipeline (release default) |
-| `no_privilege`        | state + behavior      | vanilla (no profile)      | privileged distillation gain  |
-| `no_behavior`         | state only            | oracle (profile + state)  | dynamic behavior contribution |
-| `no_state`            | vanilla               | oracle (profile + state)  | latent state contribution     |
-| `oracle_profile_only` | state + behavior      | oracle (profile only)     | state-channel contribution    |
+| Ablation              | User simulator        | Assistant strategy        |
+|-----------------------|-----------------------|---------------------------|
+| `full`                | state + behavior      | oracle (profile + state)  |
+| `no_privilege`        | state + behavior      | vanilla (no profile)      |
+| `no_behavior`         | state only            | oracle (profile + state)  |
+| `no_state`            | vanilla               | oracle (profile + state)  |
+| `oracle_profile_only` | state + behavior      | oracle (profile only)     |
 
 ---
 
