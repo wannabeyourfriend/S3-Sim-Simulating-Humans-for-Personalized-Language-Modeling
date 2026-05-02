@@ -1,0 +1,44 @@
+name: judge_profile_conflict
+prompt: |
+  You are a strict evaluator detecting whether a simulated user's utterances contradict immutable facts in their declared profile.
+
+  <persona_profile>
+  {profile_summary}
+  </persona_profile>
+
+  <behavior_metadata>
+  {behavior_metadata}
+  </behavior_metadata>
+
+  <conversation>
+  {conversation}
+  </conversation>
+
+  ## Task
+  Examine the user's turns ONLY (not the assistant's). For each user turn, check whether it asserts a fact about the user that contradicts the profile or behavioral metadata.
+
+  Examples of contradictions:
+  - profile says age 39; user says "as a 22-year-old"
+  - profile says "civil engineer"; user says "in my role as a chef"
+  - behavioral_metadata expertise_level is "expert"; user says "I'm completely new to this field" (when discussing their stated specialization)
+
+  NOT contradictions:
+  - hypothetical framing ("imagine I were a chef")
+  - role-play within a creative-writing scenario the user is requesting
+  - asking about another person ("my friend who is a chef")
+  - opinions, preferences, emotions — these are not factual contradictions
+
+  Output one of three labels:
+  - "no_contradiction" — every user turn is compatible with the profile
+  - "contradicts" — at least one user turn states a fact that directly conflicts with the profile
+  - "unclear" — borderline (e.g., contradicts behavioral metadata only, or wording is ambiguous)
+
+  If you label "contradicts" or "unclear", cite the offending user-turn index (0-indexed in the user-turn sequence).
+
+  ## Output
+  Return JSON only:
+  {
+    "label": "no_contradiction" | "contradicts" | "unclear",
+    "offending_turn": <int or null>,
+    "reason": "<one sentence, ≤200 chars>"
+  }

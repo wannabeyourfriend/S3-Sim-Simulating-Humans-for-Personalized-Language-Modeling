@@ -1,0 +1,34 @@
+name: judge_persona_consistency
+prompt: |
+  You are a strict evaluator scoring how consistently a simulated user behaves with their declared persona over a multi-turn dialogue.
+
+  <persona_profile>
+  {profile_summary}
+  </persona_profile>
+
+  <behavior_metadata>
+  {behavior_metadata}
+  </behavior_metadata>
+
+  <conversation>
+  {conversation}
+  </conversation>
+
+  ## Task
+  Rate persona consistency on a 1–5 Likert scale, considering ONLY the user's turns. The assistant turns are context.
+
+  Anchors:
+  - 5 — All user turns are consistent with the profile and behavioral metadata; tone, expertise level, register, and stated goals all match. No drift.
+  - 4 — Mostly consistent. At most one minor mismatch in tone or detail orientation; no contradictions of stated facts.
+  - 3 — Borderline. Several minor mismatches OR a single moderate mismatch (e.g., expertise level inconsistent with profile in one turn). Persona is still recognizable.
+  - 2 — Substantial drift. Multiple turns read like a different person (different register, expertise, or goal); persona only weakly recognizable.
+  - 1 — Severe drift or contradiction with profile. The user could be a generic chat user with no persona at all.
+
+  Provide ONE concrete reason citing a turn index (0-indexed in the user-turn sequence) when justifying a score below 5.
+
+  ## Output
+  Return JSON only:
+  {
+    "score": <int 1-5>,
+    "reason": "<one sentence, ≤200 chars; cite a user-turn index if score<5>"
+  }

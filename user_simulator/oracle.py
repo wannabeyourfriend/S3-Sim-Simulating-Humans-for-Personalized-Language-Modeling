@@ -9,27 +9,13 @@ from pathlib import Path
 from user_simulator.data import Persona, LLM, count_tokens, fmt_conversation, load_json, ENC, CONV_DIR, SFT_DIR
 from user_simulator.ablation import AblationConfig
 from user_simulator.prompts import load_prompt, render
+# Re-export for backwards compatibility — the canonical home is user_simulator.sft.
+from user_simulator.sft import BASE_SYSTEM_INSTRUCTION, build_sft_system_prompt  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
 _ORACLE = load_prompt("assistant_oracle")
 _ORACLE_NO_STATE = load_prompt("assistant_vanilla_with_profile")
-
-BASE_SYSTEM_INSTRUCTION = (
-    "You are a personalized AI assistant. Given the conversation so far, "
-    "reason about the user's state and provide a helpful response."
-)
-
-
-def build_sft_system_prompt(profile_summary: str = "", behavior_metadata: str = "",
-                            include_profile: bool = True) -> str:
-    """Build the SFT system prompt, optionally injecting user profile."""
-    parts = [BASE_SYSTEM_INSTRUCTION]
-    if include_profile and profile_summary:
-        parts.append(f"\n<user_profile>\n{profile_summary}\n</user_profile>")
-    if include_profile and behavior_metadata:
-        parts.append(f"\n<behavior_metadata>\n{behavior_metadata}\n</behavior_metadata>")
-    return "\n".join(parts)
 
 
 # ── Oracle annotation ──────────────────────────────────────────────────────────
@@ -134,12 +120,11 @@ def assemble_sft(conversations_dir: Path, output_path: Path,
     Scans conversations_dir recursively for *.json files.  Works with both
     flat directories and nested persona_id/ subdirectories.
 
-    Args:
-        conversations_dir: directory containing conversation JSON files
-        output_path: output JSONL path
-        include_profile: inject user profile into system prompt
-        max_tokens: skip conversations exceeding this token count
+    Delegates SFT-line construction to `user_simulator.sft.build_sft_instance`
+    so offline-assembled lines match the streaming-rollout output exactly.
     """
+    from user_simulator.sft import build_sft_instance
+
     conversations_dir = Path(conversations_dir)
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -151,38 +136,26 @@ def assemble_sft(conversations_dir: Path, output_path: Path,
     skipped = 0
     for conv_file in json_files:
         data = load_json(conv_file)
-        conversation = data.get("conversation", [])
-        if not conversation:
+
+        ablation_name = data.get("ablation") or "full"
+        try:
+            config = AblationConfig.from_name(ablation_name)
+        except ValueError:
+            logger.warning("Unknown ablation %s in %s; defaulting to 'full'",
+                           ablation_name, conv_file)
+            config = AblationConfig.full()
+        # CLI override of the per-ablation default.
+        config.sft_include_profile = include_profile
+
+        instance = build_sft_instance(data, config)
+        if instance is None:
             continue
 
-        system_msg = build_sft_system_prompt(
-            profile_summary=data.get("profile_summary", ""),
-            behavior_metadata=json.dumps(data.get("behavioral_metadata", {}),
-                                         indent=2, ensure_ascii=False)
-                if data.get("behavioral_metadata") else "",
-            include_profile=include_profile,
-        )
-
-        messages = [{"role": "system", "content": system_msg}]
-        for msg in conversation:
-            if msg["role"] in ("user", "assistant"):
-                messages.append({"role": msg["role"], "content": msg["content"]})
-
-        total_tokens = sum(count_tokens(m["content"]) for m in messages)
+        total_tokens = sum(count_tokens(m["content"]) for m in instance["messages"])
         if total_tokens > max_tokens:
             skipped += 1
             continue
-
-        instances.append({
-            "messages": messages,
-            "metadata": {
-                "persona_id": data.get("persona_id", ""),
-                "scenario_id": data.get("prompt_id", ""),
-                "num_turns": data.get("num_turns", 0),
-                "termination": data.get("termination", ""),
-                "ablation": data.get("ablation", ""),
-            },
-        })
+        instances.append(instance)
 
     with open(output_path, "w", encoding="utf-8") as f:
         for row in instances:

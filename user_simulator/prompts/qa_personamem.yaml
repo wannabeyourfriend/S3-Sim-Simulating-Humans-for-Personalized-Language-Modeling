@@ -1,0 +1,39 @@
+name: qa_personamem
+prompt: |
+  You are constructing a personalized multiple-choice QA item from a multi-turn conversation between a user (with a known persona) and an AI assistant. The student model under test will see the conversation history, then a user query and 4 options, and must pick the option that best reflects the user's hidden preferences.
+
+  <persona>
+  {profile_summary}
+  </persona>
+
+  <behavior_metadata>
+  {behavior_metadata}
+  </behavior_metadata>
+
+  <user_state_snapshot>
+  {user_state}
+  </user_state_snapshot>
+
+  <conversation_excerpt>
+  {conversation_excerpt}
+  </conversation_excerpt>
+
+  ## Task
+  1. Identify ONE concrete preference / belief / lifestyle pattern of this user that is supported by the persona, behavior_metadata, or user_state. Name this the "ground-truth preference".
+  2. Write a first-person user query that would naturally elicit a personalized recommendation from the assistant. **The query MUST NOT mention or reference the preference itself** — the question must look generic, but a chatbot that has correctly internalized the user's profile would tilt its answer toward the preference. Do NOT use phrases like "my preferences", "what I like", "recall my preference", "recall your memory".
+  3. Generate four 1-3 sentence answers to that query, each with the same tone/length and same surface structure:
+     - "correct": appropriately personalized to the user's ground-truth preference (without explicitly stating the preference verbatim — the personalization is contextual)
+     - "stereotypical": personalized to a likely demographic stereotype that does NOT match this individual (use the persona demographics — age, gender, occupation, country — to construct the stereotype). Must be plausible for a *different* person of the same demographics.
+     - "random": personalized to a random preference unrelated to the user's actual preferences. Must be plausible for *some* user.
+     - "generic": non-personalized, suitable for anyone, no demographic or preference-leaning content.
+  4. None of the four answers should explicitly leak the ground-truth preference text. Lengths must match within ±20%. All four must be plausible.
+
+  ## Output (JSON only)
+  {
+    "ground_truth_preference": "<one sentence describing the preference>",
+    "user_query": "<the generic-looking first-person question>",
+    "correct": "<answer>",
+    "stereotypical": "<answer>",
+    "random": "<answer>",
+    "generic": "<answer>"
+  }

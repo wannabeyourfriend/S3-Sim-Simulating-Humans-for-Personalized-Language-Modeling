@@ -1,0 +1,43 @@
+name: qa_rewrite_lamp
+prompt: |
+  You are hardening a personalized classification/generation item.
+
+  <persona_block>
+  {profile_block}
+  </persona_block>
+
+  <original_item>
+  PROFILE ITEMS (past inputs and their labels):
+  {original_profile_items}
+
+  NEW INPUT (query): {original_query}
+  GOLD OUTPUT (this must be preserved): {gold_target}
+  TASK FAMILY: {task_family}
+  </original_item>
+
+  ## Your task
+
+  Rewrite this LaMP-style item to be substantially harder, keeping the gold output exactly the same: `{gold_target}`.
+
+  Hardness rules:
+  1. **Profile items** (past input → output pairs): rewrite the *inputs* to be more diverse and realistic; keep the *outputs* (labels) unchanged. The set of pairs must still establish a learnable pattern that points to `{gold_target}` for the new query.
+  2. **New input (query)**: rewrite so it is *ambiguous* on its surface — at least one other plausible label could fit if the rater ignored the user's profile pattern. The pattern in the past items, plus the persona signal, must be what disambiguates.
+  3. **Gold output**: keep `{gold_target}` exactly as-is. Do not change spelling, casing, or wording.
+
+  ## Personalized reasoning trace
+
+  The answer must be a SHORT reasoning trace followed by the gold output on its own final line.
+  - The reasoning must cite at least one past-item pattern AND one persona signal.
+  - The very last line must be exactly: `{gold_target}` (nothing else on that line).
+
+  ## Output format
+
+  Return JSON only:
+  {
+    "profile_items": [
+      {"input": "<text>", "output": "<unchanged label>"},
+      ... (same number of items as original, same labels in same order)
+    ],
+    "query": "<rewritten ambiguous query>",
+    "reasoning_trace_and_answer": "<reasoning trace ... final line: {gold_target}>"
+  }

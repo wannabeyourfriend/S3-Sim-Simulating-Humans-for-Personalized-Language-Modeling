@@ -1,0 +1,46 @@
+name: qa_rewrite_bigtom
+prompt: |
+  You are hardening a theory-of-mind item about a specific user.
+
+  <persona_block>
+  {profile_block}
+  </persona_block>
+
+  <conversation_excerpt>
+  {conversation_excerpt}
+  </conversation_excerpt>
+
+  <original_item>
+  NARRATIVE: {original_narrative}
+  QUESTION: {original_question}
+  OPTION A: {original_option_a}
+  OPTION B: {original_option_b}
+  CORRECT LETTER: {correct_letter}
+  </original_item>
+
+  ## Your task
+
+  Rewrite this ToM item to be substantially harder, keeping the same correct letter ({correct_letter}).
+
+  Hardness rules:
+  1. **Narrative**: rewrite so the user's mental state is implied through behavior + persona context, not stated. Remove any sentence that names the emotion or intent directly. Add at least one detail that *could* support the wrong answer if read superficially.
+  2. **Question**: keep it as a what-does-the-user-want / what-do-they-believe question.
+  3. **Options**: rewrite both. The correct one (position {correct_letter}) must capture the inferred mental state precisely. The wrong one should be the answer a model would give if it took the surface behavior at face value, ignoring the persona.
+
+  ## Personalized reasoning trace
+
+  The answer must include a reasoning trace that:
+  - Names the surface evidence that *could* mislead toward the wrong option,
+  - Cites at least one persona signal that resolves the ambiguity,
+  - Ends with exactly: `Answer:{correct_letter}){correct_text}` where {correct_text} is the rewritten text of the correct option.
+
+  ## Output format
+
+  Return JSON only:
+  {
+    "narrative": "<rewritten narrative — implication, not statement>",
+    "question": "<rewritten question>",
+    "option_a": "<text>",
+    "option_b": "<text>",
+    "reasoning_trace_and_answer": "<reasoning trace ending with 'Answer:{correct_letter})<text of correct option>'>"
+  }

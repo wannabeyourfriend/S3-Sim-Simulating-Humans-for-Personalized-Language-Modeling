@@ -1,0 +1,51 @@
+name: qa_rewrite_personamem
+prompt: |
+  You are hardening a personalized multiple-choice item so it cannot be answered without the user's specific persona and conversation history.
+
+  <persona_block>
+  {profile_block}
+  </persona_block>
+
+  <conversation_excerpt>
+  {conversation_excerpt}
+  </conversation_excerpt>
+
+  <original_item>
+  USER QUERY: {original_user_query}
+
+  OPTIONS (correct = {correct_letter}):
+  {original_options_block}
+
+  ORIGINAL CORRECT OPTION TEXT: {original_correct_text}
+  </original_item>
+
+  ## Your task
+
+  Rewrite this MCQ to be substantially harder, while keeping the same correct letter ({correct_letter}).
+
+  Hardness rules:
+  1. The user query must require persona-specific reasoning to disambiguate — a generic "good advice" answer should be wrong.
+  2. Rewrite all four options. The correct option must remain personalized to this user; the three distractors must each be plausible at first glance but wrong for a *specific* reason tied to the persona (e.g., violates a stated value, ignores a constraint, contradicts a turn-N statement).
+  3. Distractors should NOT be obviously generic, stereotypical, or absurd. Each should be the kind of answer a model would give if it ignored one specific persona signal.
+  4. Keep the option at position {correct_letter} as the correct one. Do not shuffle.
+
+  ## Personalized reasoning trace
+
+  Then write a reasoning trace that:
+  - Cites at least TWO specific signals (e.g., "turn 3 of the conversation, the user said X" or "the persona profile notes Y") before naming the answer.
+  - Walks through why each distractor fails by referencing a concrete persona/conversation signal.
+  - Ends with exactly: `Final Answer: {correct_letter}`
+
+  ## Output format
+
+  Return JSON only:
+  {
+    "user_query": "<rewritten query (drop the recall suffix; we'll add it back)>",
+    "options": {
+      "A": "<text>",
+      "B": "<text>",
+      "C": "<text>",
+      "D": "<text>"
+    },
+    "reasoning_trace_and_answer": "<personalized reasoning trace ending with 'Final Answer: {correct_letter}'>"
+  }

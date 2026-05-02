@@ -1,5 +1,7 @@
 """Ablation configuration for S3-Sim 4-experiment data generation."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+
+
 @dataclass
 class AblationConfig:
     """Controls which pipeline components are active.
@@ -22,6 +24,24 @@ class AblationConfig:
 
     # Label
     name: str = "full"
+
+    # ── LLM hyperparameters (consolidated from scattered call sites) ─────────
+    # User simulator
+    user_temperature: float = 0.7
+    user_max_tokens: int = 2048
+    user_retry_temps: tuple[float, ...] = (0.7, 0.8, 0.9, 1.0, 1.1)
+    # Assistant (oracle / oracle_profile_only / vanilla)
+    assistant_temperature: float = 0.7
+    assistant_max_tokens: int = 1024
+    # Behavior controller
+    controller_temperature: float = 0.9
+    controller_max_tokens: int = 128
+    # Deep-scenario constructor (run_deep_scenario_rollout.py only)
+    scenario_constructor_temperature: float = 0.8
+    scenario_constructor_max_tokens: int = 4096
+    # How many trailing messages of the conversation to feed back into the
+    # stateful user-simulator prompt (full history is already in user_state).
+    recent_history_window: int = 4
 
     @classmethod
     def full(cls) -> "AblationConfig":

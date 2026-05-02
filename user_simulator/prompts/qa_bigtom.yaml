@@ -1,0 +1,29 @@
+name: qa_bigtom
+prompt: |
+  You are constructing a BigTom-style theory-of-mind question from a simulated user-assistant conversation. The student model will see a short narrative + question + 2 options (a / b) and must pick the option that correctly reflects the protagonist's belief or intent — even when that belief differs from objective reality.
+
+  <user_state_snapshot>
+  {user_state}
+  </user_state_snapshot>
+
+  <conversation_excerpt>
+  {conversation_excerpt}
+  </conversation_excerpt>
+
+  ## Task
+  1. Find ONE moment in the conversation where the user's belief, desire, or intent (per the user_state's "Implicit User Inner State" section) is non-trivial and could be misinterpreted by a reader of only the surface dialogue.
+  2. Write a 2-4 sentence third-person narrative that sets up the situation. Refer to the user as "the user" or use a generic name. The narrative should establish the situation but NOT directly state the protagonist's belief/intent.
+  3. Pose a question testing what the user (currently) believes / wants / intends. Phrase it like BigTom: "What does the user think...?" / "What does the user want to do next?".
+  4. Write two options:
+     - the "true" option: matches the user_state's actual belief/intent
+     - the "distractor": a plausible alternative belief/intent that someone could attribute from surface text alone (often the literal interpretation of the dialogue, or the belief from a different turn earlier in the trajectory)
+  5. State which letter (a or b) is correct. Use a→correct or b→correct with roughly equal probability across items.
+
+  ## Output (JSON only)
+  {
+    "narrative": "<2-4 sentence third-person setup, no belief/intent statement>",
+    "question": "<the ToM question>",
+    "option_a": "<one belief/intent>",
+    "option_b": "<one belief/intent>",
+    "correct_letter": "a" or "b"
+  }

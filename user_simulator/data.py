@@ -49,12 +49,6 @@ class Persona:
         return "\n".join(parts)
 
 @dataclass
-class Prompt:
-    id: str
-    text: str
-    fingerprint: dict = field(default_factory=dict)
-
-@dataclass
 class Scenario:
     id: str
     category: str
@@ -94,10 +88,18 @@ class LLM:
                    call_type: str = "chat") -> str | tuple[str, str]:
         """Send a chat request. If return_thinking=True, returns (content, thinking) tuple."""
         import time as _time
+        # GPT-5 family rejects `max_tokens` and `temperature!=1` — use
+        # `max_completion_tokens` and drop temperature for those models.
+        is_gpt5 = self.model.lower().startswith("gpt-5") or "gpt-5" in self.model.lower()
         async with self.sem:
             for attempt in range(1, self.retries + 1):
                 try:
-                    kw = dict(model=self.model, messages=messages, temperature=temperature, max_tokens=max_tokens)
+                    if is_gpt5:
+                        kw = dict(model=self.model, messages=messages,
+                                  max_completion_tokens=max_tokens)
+                    else:
+                        kw = dict(model=self.model, messages=messages,
+                                  temperature=temperature, max_tokens=max_tokens)
                     if json_mode:
                         kw["response_format"] = {"type": "json_object"}
                     t0 = _time.time()
@@ -149,16 +151,47 @@ class LLM:
         return s
 
 def load_personas(d=None) -> list[Persona]:
-    """Load persona YAML files. Supports both raw and refined profiles.
+    """Load persona profiles from a YAML directory or a JSONL file.
 
-    Refined profiles may have: behavioral_metadata, refined_summary, selected_prompts.
+    - If `d` is a `.jsonl` file, parse one persona per line.
+    - Otherwise treat `d` as a directory of `*.yaml` persona files.
+    Refined profiles may carry `behavioral_metadata`, `refined_summary`, `selected_prompts`.
     """
     d = d or DATA_DIR / "profiles" / "yaml"
     out = []
-    for p in sorted(Path(d).glob("*.yaml")):
+    p = Path(d)
+    if p.is_file() and p.suffix == ".jsonl":
+        for i, line in enumerate(p.read_text(encoding="utf-8").splitlines()):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                raw = json.loads(line)
+            except Exception as e:
+                logger.warning("skip %s line %d: %s", p, i, e)
+                continue
+            metadata = {}
+            if raw.get("behavioral_metadata"):
+                metadata["behavioral_metadata"] = raw["behavioral_metadata"]
+            if raw.get("refined_summary"):
+                metadata["refined_summary"] = raw["refined_summary"]
+            pid = raw.get("persona_id") or raw.get("id")
+            if not pid:
+                continue
+            out.append(Persona(
+                id=pid,
+                attributes=raw.get("attributes") or {},
+                summary=raw.get("summary", ""),
+                fingerprint=raw.get("fingerprint") or {},
+                metadata=metadata,
+                selected_prompts=raw.get("selected_prompts") or [],
+            ))
+        logger.info("loaded %d personas from %s", len(out), p)
+        return out
+
+    for fp in sorted(p.glob("*.yaml")):
         try:
-            raw = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
-            # Build metadata dict from refined fields
+            raw = yaml.safe_load(fp.read_text(encoding="utf-8")) or {}
             metadata = {}
             if raw.get("behavioral_metadata"):
                 metadata["behavioral_metadata"] = raw["behavioral_metadata"]
@@ -166,7 +199,7 @@ def load_personas(d=None) -> list[Persona]:
                 metadata["refined_summary"] = raw["refined_summary"]
 
             out.append(Persona(
-                id=raw.get("persona_id", p.stem),
+                id=raw.get("persona_id", fp.stem),
                 attributes=raw.get("attributes") or {},
                 summary=raw.get("summary", ""),
                 fingerprint=raw.get("fingerprint") or {},
@@ -174,51 +207,9 @@ def load_personas(d=None) -> list[Persona]:
                 selected_prompts=raw.get("selected_prompts") or [],
             ))
         except Exception as e:
-            logger.warning("skip %s: %s", p, e)
+            logger.warning("skip %s: %s", fp, e)
     logger.info("loaded %d personas", len(out))
     return out
-
-def load_prompts(path=None) -> list[Prompt]:
-    path = path or DATA_DIR / "initial_prompts" / "prompts_mixed_taged.jsonl"
-    out = []
-    with open(path, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line: continue
-            try:
-                d = json.loads(line)
-                out.append(Prompt(id=d["prompt_id"], text=d["prompt_text"], fingerprint=d.get("fingerprint", {})))
-            except json.JSONDecodeError:
-                continue
-    logger.info("loaded %d prompts", len(out))
-    return out
-
-def match_prompts(persona: Persona, prompts: list[Prompt], top_k=200) -> list[Prompt]:
-    """Score prompts by fingerprint overlap, return top-k."""
-    def _n(v): return v.strip().lower() if isinstance(v, str) else ""
-    def _nl(v): return [_n(x) for x in v] if isinstance(v, list) else [_n(v)]
-
-    scored = []
-    pd, pr, pe = _nl(persona.fingerprint.get("domain", ["general"])), \
-                 _nl(persona.fingerprint.get("region", ["GLOBAL"])), \
-                 _n(persona.fingerprint.get("expertise_level", "mid"))
-    pt = [_n(t) for t in persona.fingerprint.get("preferred_task_types", [])]
-
-    for p in prompts:
-        s = 0.0
-        fd = _nl(p.fingerprint.get("domain", []))
-        if set(pd) & set(fd): s += 3.0
-        elif "general" in fd or "general" in pd: s += 1.5
-        if _n(p.fingerprint.get("register", "")) == _n(persona.fingerprint.get("register", "")): s += 1.5
-        fr = _nl(p.fingerprint.get("region", []))
-        if set(pr) & set(fr) or "global" in fr or "global" in pr: s += 1.0
-        fe = _n(p.fingerprint.get("expertise_level_implied", ""))
-        if fe == pe: s += 2.0
-        ft = _n(p.fingerprint.get("task_type", ""))
-        if ft in pt: s += 2.5
-        scored.append((s, p))
-    scored.sort(key=lambda x: -x[0])
-    return [p for _, p in scored[:top_k]]
 
 def save_json(data, path: Path):
     path.parent.mkdir(parents=True, exist_ok=True)

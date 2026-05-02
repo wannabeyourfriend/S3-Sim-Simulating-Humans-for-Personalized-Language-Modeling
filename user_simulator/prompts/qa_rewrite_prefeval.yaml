@@ -1,0 +1,40 @@
+name: qa_rewrite_prefeval
+prompt: |
+  You are hardening a personalized preference-following item.
+
+  <persona_block>
+  {profile_block}
+  </persona_block>
+
+  <conversation_excerpt>
+  {conversation_excerpt}
+  </conversation_excerpt>
+
+  <original_item>
+  PREFERENCE: {original_preference}
+  QUESTION: {original_question}
+  ORIGINAL RESPONSE: {original_response}
+  </original_item>
+
+  ## Your task
+
+  Rewrite this preference-following item to be substantially harder.
+
+  Hardness rules:
+  1. **Sharpen the preference**: turn it conditional or nuanced — e.g., add a context where the rule reverses, or add a competing constraint. The new preference must still be acknowledgeable in a single sentence and must be grounded in this specific persona.
+  2. **Sharpen the question**: rewrite so a naive answer that ignores the preference would be plausible (but wrong). The question should set up a conflict between the obvious helpful answer and the preference-respecting one.
+  3. **Rewrite the response**: it must
+     - explicitly quote or paraphrase the preference (so the acknowledge-gate passes),
+     - reason through the trade-off the question creates,
+     - cite at least one persona signal (a profile fact or a turn from the conversation),
+     - end with a concrete recommendation that respects the preference.
+
+  ## Output format
+
+  Return JSON only:
+  {
+    "preference": "<rewritten conditional/nuanced preference>",
+    "question": "<rewritten question that creates a tension>",
+    "assistant_response": "<reasoning trace + concrete recommendation. Must include a phrase that quotes or paraphrases the preference verbatim.>",
+    "acknowledge_quote": "<the substring of the response that acknowledges the preference>"
+  }

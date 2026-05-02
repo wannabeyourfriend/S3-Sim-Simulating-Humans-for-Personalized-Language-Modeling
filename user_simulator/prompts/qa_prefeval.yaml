@@ -1,0 +1,37 @@
+name: qa_prefeval
+prompt: |
+  You are constructing a PrefEval-style personalization test from a simulated conversation. The student model will see an explicit user-stated preference, then several intervening exchanges, then a question. It must produce a response that (a) acknowledges the preference, (b) does not violate it, (c) does not hallucinate, (d) is helpful.
+
+  <persona>
+  {profile_summary}
+  </persona>
+
+  <behavior_metadata>
+  {behavior_metadata}
+  </behavior_metadata>
+
+  <user_state_snapshot>
+  {user_state}
+  </user_state_snapshot>
+
+  <conversation_excerpt>
+  {conversation_excerpt}
+  </conversation_excerpt>
+
+  ## Task
+  1. Extract or formulate ONE explicit preference statement that this user could plausibly say in first person at the start of a session (e.g., "I prefer plant-based meals and I'm allergic to peanuts."). The preference must be supported by the persona/state.
+  2. Write a downstream user question whose best answer materially depends on respecting that preference. The question itself should NOT restate the preference (no "as I mentioned, I prefer X..."). The question should be the kind a real user would ask after some intervening turns.
+  3. Write the ideal assistant response that:
+     - explicitly acknowledges the preference (a brief reference is enough, e.g., "Since you prefer plant-based...")
+     - does not violate it (no recommendations that contradict it)
+     - is concrete and helpful (real recommendations, not platitudes)
+     - does not hallucinate facts that aren't in the conversation/persona
+  4. Provide a brief quote or paraphrase of the acknowledgement clause from your response to make automatic checking easier.
+
+  ## Output (JSON only)
+  {
+    "preference": "<first-person preference statement, 1-2 sentences>",
+    "question": "<the downstream user question, 1-3 sentences>",
+    "assistant_response": "<full assistant reply, 80-200 words>",
+    "acknowledge_quote": "<exact substring from assistant_response that references the preference>"
+  }

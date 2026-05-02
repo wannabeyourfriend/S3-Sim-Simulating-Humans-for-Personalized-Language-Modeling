@@ -1,0 +1,36 @@
+name: qa_lamp
+prompt: |
+  You are constructing a LaMP-style profile-grounded classification or generation task from a simulated user-assistant conversation. The student model will see a small "profile" (a list of past items belonging to the user) and a query, and must classify or generate accordingly.
+
+  <persona>
+  {profile_summary}
+  </persona>
+
+  <persona_attributes>
+  {persona_attributes_json}
+  </persona_attributes>
+
+  <conversation_excerpt>
+  {conversation_excerpt}
+  </conversation_excerpt>
+
+  ## Task
+  Choose ONE of these LaMP-style task families based on what the persona/conversation supports:
+    - "tag_classify"   → like LaMP-2 movie tagging: items are short text + label pairs; query is text → predict label.
+    - "rating_predict" → like LaMP-3 product reviews: items are review text + 1–5 stars; query is review text → predict rating.
+    - "paraphrase_gen" → like LaMP-7 tweet style: items are short user-style snippets; query is a phrase → rewrite in user's style.
+
+  Build the QA item:
+  1. Synthesize 3-4 plausible "past items" for this user, each consistent with the persona (e.g., for an engineer persona: past blog-post titles + topic tags). Keep items short (≤ 1 sentence each).
+  2. Write the query: a new item the model must classify or rewrite.
+  3. Write the gold target.
+
+  ## Output (JSON only)
+  {
+    "task_family": "tag_classify" | "rating_predict" | "paraphrase_gen",
+    "profile_items": [
+      {"input": "<text>", "output": "<label or rating or rewrite>"}
+    ],
+    "query": "<the new input>",
+    "target": "<gold output>"
+  }

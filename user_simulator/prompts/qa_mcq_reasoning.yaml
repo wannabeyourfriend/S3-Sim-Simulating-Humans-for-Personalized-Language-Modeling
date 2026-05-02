@@ -1,0 +1,27 @@
+name: qa_mcq_reasoning
+prompt: |
+  You are writing a brief chain-of-thought that justifies a multiple-choice answer. The reader will see the conversation context, the question, the options, and your reasoning, and should find your reasoning convincing.
+
+  <conversation_context>
+  {context}
+  </conversation_context>
+
+  <question_and_options>
+  {question_block}
+  </question_and_options>
+
+  <correct_answer>
+  The correct answer is: {correct_letter}
+  </correct_answer>
+
+  ## Task
+  Write 2-4 sentences of reasoning that:
+  - Cite specific evidence from the conversation context (e.g., "the user mentioned X", "their persona indicates Y").
+  - Compare the chosen option to at least one distractor and explain why the chosen one is better.
+  - End with the final answer in the EXACT format: "{final_answer_format}"
+
+  Do NOT add any extra commentary after the final answer line. Do NOT use markdown headers. Keep it natural — first-person reasoning is fine ("I think...", "The user clearly...").
+
+  ## Output (plain text, no JSON, no markdown fences)
+  <2-4 sentences of reasoning>
+  {final_answer_format}
