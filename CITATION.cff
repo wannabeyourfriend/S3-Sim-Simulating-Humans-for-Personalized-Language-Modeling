@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+title: "Mind2Dialogue: State-Aware User Simulation for Theory-of-Mind and Personalization"
+message: "If you use this code or the released data, please cite our paper."
+type: software
+authors:
+  - family-names: "Anonymous"
+preferred-citation:
+  type: article
+  title: "Mind2Dialogue: State-Aware User Simulation for Theory-of-Mind and Personalization"
+  authors:
+    - family-names: "Anonymous"
+  year: 2026
+  notes: "Submitted to NeurIPS 2026"
+repository-code: "https://github.com/wannabeyourfriend/mind2dialogue"
+license: MIT
+keywords:
+  - personalization
+  - theory-of-mind
+  - synthetic data
+  - user simulation
+  - large language models
+  - supervised fine-tuning
