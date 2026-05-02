@@ -1,9 +1,52 @@
+# env / secrets
 .env
+.env.*
+!.env.example
+
+# python
 __pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+.eggs/
+
+# virtual envs
 .venv/
-output/
-exp-plan/
+venv/
+env/
+
+# build / dist
+build/
+dist/
+*.whl
+
+# pytest / linters / coverage
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# IDEs / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Claude Code workspace
 .claude/
-eval/
+
+# generated outputs (regeneratable from data/ via run_*.py)
+output/
+outputs/
+results/
+logs/
+
+# scratch
+exp-plan/
 ref-paper/
+*.tmp
+
+# misc artifacts of stage-1 prep that shouldn't be committed
 data/behavior_modes/yaml/
