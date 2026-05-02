@@ -413,7 +413,7 @@ async def _rewrite_one(
 def _build_ctx_lookup(conv_root: Path) -> dict:
     """Map (persona_id, scenario_id) → {profile_block, conversation_excerpt}.
 
-    Walks every *.json under conv_root that looks like an S³-Sim conversation
+    Walks every *.json under conv_root that looks like a Mind2Dialogue conversation
     (has persona_id + prompt_id + conversation). Used to inject persona +
     convo context into rewrite prompts for styles whose SFT lines don't carry it.
     """

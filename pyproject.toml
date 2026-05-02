@@ -1,7 +1,7 @@
 [project]
-name = "s3-sim"
+name = "mind2dialogue"
 version = "0.1.0"
-description = "S³-Sim: Simulating Humans for Personalized Language Modeling"
+description = "Mind2Dialogue: State-Aware User Simulation for Theory-of-Mind and Personalization"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"

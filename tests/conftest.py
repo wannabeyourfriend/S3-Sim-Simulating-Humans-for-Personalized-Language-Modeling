@@ -1,4 +1,4 @@
-"""Shared pytest fixtures for the S³-Sim test suite."""
+"""Shared pytest fixtures for the Mind2Dialogue test suite."""
 
 from __future__ import annotations
 

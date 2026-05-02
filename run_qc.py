@@ -16,7 +16,7 @@ Examples:
     # Full QC including judges
     uv run python run_qc.py \
         --conversations-dir output/rollout_gpt_4o_mini_real_world_us_1240_queires_full/conversations \
-        --profiles-jsonl S3-Sim-Simulating-Humans-for-Personalized-Language-Modeling/data/filterd_refined_profiles/summary_refined_profiles_us.jsonl \
+        --profiles-jsonl mind2dialogue/data/filterd_refined_profiles/summary_refined_profiles_us.jsonl \
         --output-dir output/qc/v1_demo \
         --concurrency 40
 
