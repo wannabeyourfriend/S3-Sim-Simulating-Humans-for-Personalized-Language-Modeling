@@ -1,4 +1,4 @@
-"""Quality-check toolkit for S³-Sim conversation artifacts.
+"""Quality-check toolkit for Mind2Dialogue conversation artifacts.
 
 Six dimensions:
   D1 schema validity         — programmatic

@@ -230,7 +230,7 @@ async def main(args):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Quality-check S³-Sim conversations")
+    parser = argparse.ArgumentParser(description="Quality-check Mind2Dialogue conversations")
     parser.add_argument(
         "--conversations-dir", required=True, help="Directory of conversation JSONs (recursive)"
     )

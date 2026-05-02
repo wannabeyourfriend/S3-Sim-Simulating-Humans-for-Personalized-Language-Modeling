@@ -213,7 +213,7 @@ async def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Construct QA-format SFT data from S³-Sim conversations"
+        description="Construct QA-format SFT data from Mind2Dialogue conversations"
     )
     parser.add_argument(
         "--conversations-dir", required=True, help="Directory of conversation JSONs (recursive)"

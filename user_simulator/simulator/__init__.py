@@ -1,4 +1,4 @@
-"""Conversation rollout engine for S3-Sim.
+"""Conversation rollout engine for Mind2Dialogue.
 
 Public API:
     rollout_conversation(...) — main rollout loop

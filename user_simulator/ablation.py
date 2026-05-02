@@ -1,4 +1,4 @@
-"""Ablation configuration for S3-Sim 4-experiment data generation."""
+"""Ablation configuration for Mind2Dialogue 4-experiment data generation."""
 
 from dataclasses import dataclass, field
 

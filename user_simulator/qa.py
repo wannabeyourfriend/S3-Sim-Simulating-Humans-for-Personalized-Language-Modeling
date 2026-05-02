@@ -1,4 +1,4 @@
-"""Personalized QA-dataset construction from S³-Sim conversations.
+"""Personalized QA-dataset construction from Mind2Dialogue conversations.
 
 Takes existing conversation JSONs as input, synthesizes (question, answer)
 pairs whose system+user prompt formats *byte-match* the p13n-eval-harness's

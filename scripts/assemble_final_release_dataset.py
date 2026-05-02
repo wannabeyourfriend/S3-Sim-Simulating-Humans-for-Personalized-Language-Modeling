@@ -392,9 +392,9 @@ def write_json(path: Path, value: dict[str, Any]) -> None:
 
 def write_readme(path: Path, manifest: dict[str, Any]) -> None:
     lines = [
-        "# S3-Sim Final Release Dataset",
+        "# Mind2Dialogue Final Release Dataset",
         "",
-        "Curated JSONL release assembled from existing S3-Sim full-ablation rollout artifacts.",
+        "Curated JSONL release assembled from existing Mind2Dialogue full-ablation rollout artifacts.",
         "The files are organized as Hugging Face dataset configs/splits and retain OpenAI/TRL-compatible chat structures.",
         "",
         "## Data Files",
@@ -494,7 +494,7 @@ def assemble(output_dir: Path, seed: int) -> dict[str, Any]:
         write_jsonl(output_dir / relative_path, records)
 
     manifest = {
-        "name": "s3-sim-final-release",
+        "name": "mind2dialogue-final-release",
         "seed": seed,
         "schema_version": "2026-05-02",
         "sources": {
