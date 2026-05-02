@@ -1,7 +1,17 @@
-@yaml/ -> You can use simple script to convert jsonl into yaml files.
-# summary_refined_profiles_us.jsonl
+# summary_refined_profiles_{us,cn,de,in,jp}.jsonl
 
-JSONL file, one line per persona (62 total).
+Five JSONL files — one per country — each with one persona per line:
+
+| File | Personas |
+|---|---:|
+| `summary_refined_profiles_us.jsonl` | 61 |
+| `summary_refined_profiles_cn.jsonl` | 58 |
+| `summary_refined_profiles_de.jsonl` | 59 |
+| `summary_refined_profiles_in.jsonl` | 56 |
+| `summary_refined_profiles_jp.jsonl` | 57 |
+
+Every persona carries the same field schema documented below, regardless
+of country. `persona_id` namespaces are independent across files.
 
 ## Fields
 
