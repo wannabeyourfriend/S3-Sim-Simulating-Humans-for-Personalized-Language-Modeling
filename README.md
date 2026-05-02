@@ -1,8 +1,6 @@
 # Mind2Dialogue: State-Aware User Simulation for Theory-of-Mind and Personalization
 
-## Abstract
-
-Developing Large Language Models (LLMs) capable of true personalization remains a significant challenge, primarily due to the scarcity of
+🚨 **Abstract** Developing Large Language Models (LLMs) capable of true personalization remains a significant challenge, primarily due to the scarcity of
 high-quality, private personalized conversation data. Existing approaches rely on publicly available internet data, which suffers from
 severe distribution shifts, or synthetic data generated from static personas, which fail to capture the dynamic causal structure of
 real-world interactions. Consequently, models trained on such data
@@ -14,23 +12,6 @@ scaling strategies, our approach uses these evolving user states as continuous c
 surface-level mimicry. We systematically analyze the impact of different state factors on data
 quality and demonstrate that our framework enables the controllable
 scaling of diverse, high-fidelity personalized data. Experiments show that models fine-tuned on our data exhibit superior sample efficiency and significantly improved capabilities in intention inference and theory-of-mind reasoning compared to baselines.
-
----
-
-## Method
-
-Each turn, the simulator carries a latent user state of three parts:
-an immutable **persona profile**, a fixed **scenario context**, and a
-per-turn **behavioral mode** sampled by an LLM controller. Utterances
-are produced as `persona → behavior → message`, so strategic intent
-is decoupled from surface tokens.
-
-A privileged **oracle assistant** with full visibility into the user
-state generates the assistant turn. The student model is fine-tuned
-via SFT on the observable conversation history alone — forcing it
-to reconstruct latent user dynamics implicitly at inference time.
-
----
 
 ## Repository layout
 
@@ -75,8 +56,6 @@ to reconstruct latent user dynamics implicitly at inference time.
 └── run_eval_qa.py               # entry: benchmark models on QA-format slices
 ```
 
----
-
 ## Installation
 
 ```bash
@@ -96,8 +75,6 @@ export MODEL_NAME="gpt-4o-mini"
 The simulator and oracle accept independent model overrides via
 `SIM_MODEL` / `ORACLE_MODEL` and a separate `JUDGE_MODEL` for the QC and
 benchmark judges (mitigates self-judging bias).
-
----
 
 ## End-to-end pipeline
 
@@ -119,7 +96,7 @@ python run_qa_construction.py \
        --qc-results        output/qc/v1/qc_results.jsonl \
        --output-dir        output/qa/v1
 
-# 4. Train (Unsloth + TRL multi-turn SFT; see training/ submodule)
+# 4. Train (Unsloth + TRL multi-turn SFT; see training/submodule)
 git submodule update --init training
 cp output/qa/v1/*.jsonl training/data/
 bash training/scripts/train_qwen3_4b_modeB.sh    # or any configs/*.yaml
@@ -129,7 +106,7 @@ bash training/scripts/train_qwen3_4b_modeB.sh    # or any configs/*.yaml
 python run_eval_qa.py --qa-dir output/qa/v1 \
                       --models training/outputs/<run_name>
 #    (b) six personalization benchmarks via evaluations — serve first
-bash training/scripts/serve_qwen3_4b_no_think.sh                # vLLM @ :8002
+bash training/scripts/serve_qwen3_4b_no_think.sh
 git submodule update --init evaluations
 pip install -e evaluations
 multibench run personamem  -- --api-base http://localhost:8002/v1 \
@@ -137,12 +114,6 @@ multibench run personamem  -- --api-base http://localhost:8002/v1 \
                               --output-dir results/<run_name>/PersonaMem
 # repeat for: bigtom · lamp · personalens · prefeval · sotopia
 ```
-
-Every entry script is **resumable** — each writes its outputs incrementally
-(append-mode JSONL + per-conversation JSON files) and skips work that has
-already completed.
-
----
 
 ## Evaluation portfolio
 
@@ -167,8 +138,6 @@ Two complementary eval paths ship with the release:
   All six accept the same base flags (`--api-base · --model · --workers
   · --output-dir`); see `evaluations/README.md` for per-benchmark
   options.
-
----
 
 ## Data shape
 
@@ -197,8 +166,6 @@ Every conversation JSON carries the full latent trajectory:
 Both rollout-source and QA-source SFT lines share the OpenAI / TRL chat
 schema — see `samples/` for one-line examples of every output type
 and the `training/` submodule for the trainer that consumes them.
-
----
 
 ## Citation
 
