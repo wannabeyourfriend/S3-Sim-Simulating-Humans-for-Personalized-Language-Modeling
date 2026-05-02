@@ -13,7 +13,7 @@ surface-level mimicry. We systematically analyze the impact of different state f
 quality and demonstrate that our framework enables the controllable
 scaling of diverse, high-fidelity personalized data. Experiments show that models fine-tuned on our data exhibit superior sample efficiency and significantly improved capabilities in intention inference and theory-of-mind reasoning compared to baselines.
 
-## Repository layout
+### Repository layout
 
 ```
 .
@@ -56,7 +56,7 @@ scaling of diverse, high-fidelity personalized data. Experiments show that model
 └── run_eval_qa.py               # entry: benchmark models on QA-format slices
 ```
 
-## Installation
+### Installation
 
 ```bash
 git clone --recursive https://github.com/wannabeyourfriend/mind2dialogue.git
@@ -75,8 +75,6 @@ export MODEL_NAME="gpt-4o-mini"
 The simulator and oracle accept independent model overrides via
 `SIM_MODEL` / `ORACLE_MODEL` and a separate `JUDGE_MODEL` for the QC and
 benchmark judges (mitigates self-judging bias).
-
-## End-to-end pipeline
 
 ```bash
 # 1. Generate rollouts (async; persona + ablation choices)
@@ -115,8 +113,6 @@ multibench run personamem  -- --api-base http://localhost:8002/v1 \
 # repeat for: bigtom · lamp · personalens · prefeval · sotopia
 ```
 
-## Evaluation portfolio
-
 Two complementary eval paths ship with the release:
 
 * `run_eval_qa.py` — in-distribution check on the four QA-format slices
@@ -138,8 +134,6 @@ Two complementary eval paths ship with the release:
   All six accept the same base flags (`--api-base · --model · --workers
   · --output-dir`); see `evaluations/README.md` for per-benchmark
   options.
-
-## Data shape
 
 Every conversation JSON carries the full latent trajectory:
 
@@ -167,20 +161,17 @@ Both rollout-source and QA-source SFT lines share the OpenAI / TRL chat
 schema — see `samples/` for one-line examples of every output type
 and the `training/` submodule for the trainer that consumes them.
 
-## Citation
+### Citation
 
 ```bibtex
 @article{mind2dialogue2026,
   title  = {Mind2Dialogue: State-Aware User Simulation for Theory-of-Mind and Personalization},
   author = {Anonymous},
   year   = {2026},
-  note   = {Submitted to NeurIPS Datasets \& Benchmarks Track}
 }
 ```
 
----
-
-## Responsible use
+### Responsible use
 
 The release ships a **concerning-scenario** generator
 (`simulator_concerning_scenario_constructor`) that produces sensitive
