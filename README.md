@@ -76,41 +76,58 @@ The simulator and oracle accept independent model overrides via
 `SIM_MODEL` / `ORACLE_MODEL` and a separate `JUDGE_MODEL` for the QC and
 benchmark judges (mitigates self-judging bias).
 
+### 1. Generate rollouts (async; persona + ablation choices)
+
 ```bash
-# 1. Generate rollouts (async; persona + ablation choices)
-python run_rollout.py            --ablation full --concurrency 80
-# or scenario-driven rollouts
-python run_deep_scenario_rollout.py \
-       --constructor simulator_lifelong_scenario_constructor \
-       --concurrency 80
+python run_rollout.py --ablation full --concurrency 80
+```
 
-# 2. Quality-check (D1–D4 programmatic; D5–D6 LLM-judge)
-python run_qc.py --conversations-dir output/conversations/full \
-                 --output-dir        output/qc/v1
+Or scenario-driven rollouts (lifelong / highfreq / concerning / affective):
 
-# 3. Construct QA-format SFT (PersonaMem/PrefEval/BigTom/LaMP)
-python run_qa_construction.py \
-       --conversations-dir output/conversations/full \
-       --qc-results        output/qc/v1/qc_results.jsonl \
-       --output-dir        output/qa/v1
+```bash
+python run_deep_scenario_rollout.py --constructor simulator_lifelong_scenario_constructor --concurrency 80
+```
 
-# 4. Train (Unsloth + TRL multi-turn SFT; see training/submodule)
+### 2. Quality-check (D1–D4 programmatic; D5–D6 LLM-judge)
+
+```bash
+python run_qc.py --conversations-dir output/conversations/full --output-dir output/qc/v1
+```
+
+### 3. Construct QA-format SFT (PersonaMem / PrefEval / BigTom / LaMP)
+
+```bash
+python run_qa_construction.py --conversations-dir output/conversations/full --qc-results output/qc/v1/qc_results.jsonl --output-dir output/qa/v1
+```
+
+### 4. Train (Unsloth + TRL multi-turn SFT; see `training/` submodule)
+
+```bash
 git submodule update --init training
 cp output/qa/v1/*.jsonl training/data/
-bash training/scripts/train_qwen3_4b_modeB.sh    # or any configs/*.yaml
+bash training/scripts/train_qwen3_4b_modeB.sh
+```
 
-# 5. Evaluate
-#    (a) in-distribution check on the QA slices we trained on
-python run_eval_qa.py --qa-dir output/qa/v1 \
-                      --models training/outputs/<run_name>
-#    (b) six personalization benchmarks via evaluations — serve first
+### 5a. Evaluate — in-distribution check on the QA slices
+
+```bash
+python run_eval_qa.py --qa-dir output/qa/v1 --models training/outputs/<run_name>
+```
+
+### 5b. Evaluate — six personalization benchmarks via `evaluations/`
+
+Serve the checkpoint first:
+
+```bash
 bash training/scripts/serve_qwen3_4b_no_think.sh
+```
+
+Then run any benchmark (repeat for `bigtom · lamp · personalens · prefeval · sotopia`):
+
+```bash
 git submodule update --init evaluations
 pip install -e evaluations
-multibench run personamem  -- --api-base http://localhost:8002/v1 \
-                              --model    <run_name> --workers 64 \
-                              --output-dir results/<run_name>/PersonaMem
-# repeat for: bigtom · lamp · personalens · prefeval · sotopia
+multibench run personamem -- --api-base http://localhost:8002/v1 --model <run_name> --workers 64 --output-dir results/<run_name>/PersonaMem
 ```
 
 Two complementary eval paths ship with the release:
