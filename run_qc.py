@@ -1,33 +1,4 @@
-"""Run quality-check pipeline over a directory of conversation JSONs.
-
-Walks `--conversations-dir` recursively, scores each conversation along D1–D6,
-streams `QCResult` rows to a JSONL, and writes an aggregate summary JSON.
-
-Resumable: if `--output-dir/qc_results.jsonl` already contains a row for
-`(persona_id, scenario_id)`, that conversation is skipped.
-
-Examples:
-    # Programmatic-only smoke (no LLM cost)
-    uv run python run_qc.py \
-        --conversations-dir output/rollout_gpt_4o_mini_real_world_us_1240_queires_full/conversations \
-        --output-dir output/qc/v1_demo \
-        --skip-judges
-
-    # Full QC including judges
-    uv run python run_qc.py \
-        --conversations-dir output/rollout_gpt_4o_mini_real_world_us_1240_queires_full/conversations \
-        --profiles-jsonl mind2dialogue/data/filterd_refined_profiles/summary_refined_profiles_us.jsonl \
-        --output-dir output/qc/v1_demo \
-        --concurrency 40
-
-Profiles can be loaded from either:
-  * `--profiles-jsonl PATH` — a JSONL file with one persona per line
-    (fields: persona_id, summary, refined_summary, behavioral_metadata)
-  * `--profiles-dir PATH` — a directory of YAML files (legacy `load_personas`)
-
-Judge model is taken from env `JUDGE_MODEL` (default: gpt-4.1-mini), distinct
-from the generator's MODEL_NAME to mitigate self-judging bias.
-"""
+"""Run quality-check pipeline over a directory of conversation JSONs. """
 
 from __future__ import annotations
 
