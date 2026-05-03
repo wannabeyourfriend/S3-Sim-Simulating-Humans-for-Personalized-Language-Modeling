@@ -1,6 +1,6 @@
 # Mind2Dialogue: State-Aware User Simulation for Theory-of-Mind and Personalization
 
-🚨 **[Abstract]** Developing Large Language Models (LLMs) capable of true personalization remains a significant challenge, primarily due to the scarcity of high-quality, private personalized conversation data. Existing approaches rely on publicly available internet data, which suffers from
+🚨 **[Abstract]** Developing Large Language Models capable of true personalization remains a significant challenge, primarily due to the scarcity of high-quality, private personalized conversation data. Existing approaches rely on publicly available internet data, which suffers from
 severe distribution shifts, or synthetic data generated from static personas, which fail to capture the dynamic causal structure of
 real-world interactions. We propose a novel data generation pipeline
 that synthesizes conversation trajectories by explicitly and
