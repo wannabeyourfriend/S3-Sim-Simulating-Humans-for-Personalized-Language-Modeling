@@ -1,5 +1,8 @@
 # Mind2Dialogue: State-Aware User Simulation for Theory-of-Mind and Personalization
 
+[![Paper](https://img.shields.io/badge/arXiv-2512.06688-b31b1b.svg)](https://arxiv.org/abs/xxxx)
+[![Dataset](https://img.shields.io/badge/HuggingFace-PersonaMem--v2-ffd21e.svg)](https://huggingface.co/datasets/wannabeyourfriend-hf/mind2dialogue)
+
 🚨 **[Abstract]** Developing Large Language Models capable of true personalization remains a significant challenge, primarily due to the scarcity of high-quality, private personalized conversation data. Existing approaches rely on publicly available internet data, which suffers from
 severe distribution shifts, or synthetic data generated from static personas, which fail to capture the dynamic causal structure of
 real-world interactions. We propose a novel data generation pipeline
