@@ -1,41 +1,4 @@
-"""Benchmark OpenAI models on the locally-generated QA-format JSONL data.
-
-Loads QA items from `output/qa/<run>/<style>.jsonl`, treats `messages[:-1]` as
-the prompt sent to the model under test, parses the model's response, scores
-it against the gold answer in `messages[-1]` / `metadata`, and reports
-per-(model × style) accuracy.
-
-Per-style scoring:
-
-  PERSONAMEM_MCQ → regex-extract the chosen letter (the same patterns the
-                   eval harness uses), then compare to metadata.correct_letter.
-  BIGTOM_TOM     → "a)" / "b)" substring match (with content-match fallback),
-                   matching the harness's `_score()` exactly.
-  PREFEVAL_GEN   → judge-LLM (gpt-4.1-mini) checks whether the response
-                   acknowledges the preference and is helpful (binary).
-  LAMP_CLS       → case-insensitive exact-match against the gold target,
-                   with a substring-overlap fallback for paraphrase tasks.
-
-Subset mode (default): `--sample 10` items per style. This surfaces format
-mismatches and parser edge cases before scaling.
-
-Examples:
-    # Subset smoke (10 items per style, 4 models)
-    set -a && source .env.openai && set +a && \
-      uv run python run_eval_qa.py \
-        --qa-dir output/qa/v1_demo_full \
-        --models gpt-4o-mini gpt-4o gpt-4.1-mini gpt-5-mini \
-        --sample 10 \
-        --output-dir output/eval/v1_demo_subset
-
-    # Full run (all items, 4 models)
-    set -a && source .env.openai && set +a && \
-      uv run python run_eval_qa.py \
-        --qa-dir output/qa/v1_demo_full \
-        --models gpt-4o-mini gpt-4o gpt-4.1-mini gpt-5-mini \
-        --output-dir output/eval/v1_demo_full \
-        --concurrency 40
-"""
+"""Benchmark OpenAI models on the locally-generated QA-format JSONL data. """
 
 from __future__ import annotations
 
