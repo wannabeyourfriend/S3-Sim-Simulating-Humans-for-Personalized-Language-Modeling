@@ -13,19 +13,15 @@ surface-level mimicry. Experiments show that models fine-tuned on our data exhib
 
 ```
 .
-├── user_simulator/              
-│   ├── ablation.py              
-│   ├── data.py                 
-│   ├── oracle.p                
-│   ├── sft.py                   
-│   ├── qa.py             
+├── user_simulator/                 
+│   ├── oracle.py                                          
 │   ├── prompts/
 │   ├── simulator/               
 │   │   ├── rollout.py           
 │   │   ├── user_turn.py         
 │   │   ├── parsing.py           
 │   │   ├── persona_block.py     
-│   │   └── behavior/            
+│   │   └── behavior/         
 │   └── qc/
 ├── training/                    # unsloth sft_trainer submodule
 │   ├── sft_trainer.py           
@@ -43,7 +39,7 @@ surface-level mimicry. Experiments show that models fine-tuned on our data exhib
 ├── run_qc.py
 ├── run_qa_construction.py
 ├── run_qa_rewrite.py            
-└── run_eval_qa.py               
+└── run_eval_qa.py            
 ```
 
 ### Installation
