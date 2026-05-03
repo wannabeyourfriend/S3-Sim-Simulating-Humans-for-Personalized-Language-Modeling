@@ -1,21 +1,4 @@
-"""Rewrite v1 QA items into harder, persona-grounded v2 items using gpt-4o.
-
-For each input SFT line (from `output/.../qa/{style}.jsonl`), reverse-engineer
-the underlying question/options/preference, prompt gpt-4o with the per-style
-rewrite YAML, then re-render the v2 SFT line preserving the gold label and
-the eval-harness-expected message shape.
-
-Outputs land in `--output-dir/{style}.jsonl`. The original v1 line is kept
-in `metadata.v1_*` for diffing.
-
-Usage:
-    set -a && source .env.openai && set +a && \\
-      uv run python run_qa_rewrite.py \\
-        --qa-dir output/release_us_1k/qa \\
-        --output-dir output/release_us_1k/qa_v2 \\
-        --rewriter-model gpt-4o \\
-        --concurrency 30
-"""
+"""Rewrite QA items into harder persona-grounded items using stronger model. """
 
 from __future__ import annotations
 
