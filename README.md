@@ -13,43 +13,37 @@ surface-level mimicry. Experiments show that models fine-tuned on our data exhib
 
 ```
 .
-├── user_simulator/              # core library — no I/O at import time
-│   ├── ablation.py              # AblationConfig + 5 named presets
-│   ├── data.py                  # LLM client, Persona/Scenario, conv I/O helpers
-│   ├── oracle.py                # privileged annotation + SFT assembly
-│   ├── sft.py                   # canonical SFT line builder
-│   ├── qa.py                    # 4 personalized QA-style builders (PersonaMem/PrefEval/BigTom/LaMP)
-│   ├── prompts/                 # YAML prompt templates (Jinja-style {{var}})
-│   ├── simulator/               # multi-turn rollout
-│   │   ├── rollout.py           # main async loop
-│   │   ├── user_turn.py         # stateful & vanilla user-turn generators
-│   │   ├── parsing.py           # output parsers for <user_state>/<message>
-│   │   ├── persona_block.py     # persona → prompt-block helpers
-│   │   └── behavior/            # behavior library, selection, block rendering
-│   └── qc/                      # 6-dimension quality-check pipeline (D1–D6)
-│
-├── training/                    # SFT trainer + serving (submodule)
-│   ├── sft_trainer.py           # single-file Unsloth + TRL multi-turn SFT
-│   ├── configs/                 # one YAML per run
-│   └── scripts/                 # train + vLLM serving launchers
-│
-├── evaluations/                 # six personalization benchmarks (submodule)
-│   └── multibench/benchmarks/   # bigtom · lamp · personalens · personamem · prefeval · sotopia
-│
-├── data/                        # released artifacts
-│   ├── filterd_refined_profiles/  # persona library (US, CN, DE, IN, JP)
-│   ├── initial_prompts/           # raw real-query prompt pool
-│   ├── rewritten_prompts/         # persona-grounded rewrites (rollout seeds)
-│   └── behavior_modes/            # 17 behavior YAMLs + controller catalog
-│
-├── samples/                     # one-line examples of every output shape
-│
-├── run_rollout.py               # entry: rewritten prompts → conversations
-├── run_deep_scenario_rollout.py # entry: lifelong/highfreq/concerning/affective scenarios
-├── run_qc.py                    # entry: D1–D6 quality-check pipeline
-├── run_qa_construction.py       # entry: conversations → 4 QA-style SFT JSONLs
-├── run_qa_rewrite.py            # entry: v1 QA → v2 (harder, persona-grounded)
-└── run_eval_qa.py               # entry: benchmark models on QA-format slices
+├── user_simulator/              
+│   ├── ablation.py              
+│   ├── data.py                 
+│   ├── oracle.p                
+│   ├── sft.py                   
+│   ├── qa.py             
+│   ├── prompts/
+│   ├── simulator/               
+│   │   ├── rollout.py           
+│   │   ├── user_turn.py         
+│   │   ├── parsing.py           
+│   │   ├── persona_block.py     
+│   │   └── behavior/            
+│   └── qc/
+├── training/                    # unsloth sft_trainer submodule
+│   ├── sft_trainer.py           
+│   ├── configs/                 
+│   └── scripts/                 
+├── evaluations/                 # personalization benchmarks collection submodule
+│   └── multibench/benchmarks/   
+├── data/                        # artifacts data for conversational rollouts
+│   ├── filterd_refined_profiles/
+│   ├── initial_prompts/
+│   ├── rewritten_prompts/
+│   └── behavior_modes/
+├── run_rollout.py               
+├── run_deep_scenario_rollout.py
+├── run_qc.py
+├── run_qa_construction.py
+├── run_qa_rewrite.py            
+└── run_eval_qa.py               
 ```
 
 ### Installation
