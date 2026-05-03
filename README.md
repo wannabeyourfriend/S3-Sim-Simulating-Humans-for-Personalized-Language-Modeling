@@ -1,17 +1,13 @@
 # Mind2Dialogue: State-Aware User Simulation for Theory-of-Mind and Personalization
 
-🚨 **Abstract** Developing Large Language Models (LLMs) capable of true personalization remains a significant challenge, primarily due to the scarcity of
-high-quality, private personalized conversation data. Existing approaches rely on publicly available internet data, which suffers from
+🚨 **[Abstract]** Developing Large Language Models (LLMs) capable of true personalization remains a significant challenge, primarily due to the scarcity of high-quality, private personalized conversation data. Existing approaches rely on publicly available internet data, which suffers from
 severe distribution shifts, or synthetic data generated from static personas, which fail to capture the dynamic causal structure of
-real-world interactions. Consequently, models trained on such data
-struggle with long-horizon intent understanding and social reasoning. To address this bottleneck, we propose a novel data generation pipeline
+real-world interactions. We propose a novel data generation pipeline
 that synthesizes conversation trajectories by explicitly and
 structurally maintaining latent user state, encompassing psychological
 dynamics, beliefs, and evolving social relationships. Unlike naïve
 scaling strategies, our approach uses these evolving user states as continuous constraints to guide generation, ensuring that the synthesized dialogues reflect realistic causal depth rather than
-surface-level mimicry. We systematically analyze the impact of different state factors on data
-quality and demonstrate that our framework enables the controllable
-scaling of diverse, high-fidelity personalized data. Experiments show that models fine-tuned on our data exhibit superior sample efficiency and significantly improved capabilities in intention inference and theory-of-mind reasoning compared to baselines.
+surface-level mimicry. Experiments show that models fine-tuned on our data exhibit superior sample efficiency and significantly improved capabilities in intention inference and theory-of-mind reasoning compared to baselines.
 
 ### Repository layout
 
