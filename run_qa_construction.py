@@ -1,36 +1,4 @@
-"""Construct personalized QA-format SFT data from existing conversation JSONs.
-
-Walks `--conversations-dir` recursively, generates QA items in the requested
-styles, and emits SFT JSONL byte-compatible with the existing trainer.
-
-If `--qc-results` is given, only Tier-A conversations (per
-`output/qc/.../qc_results.jsonl`) are used as sources — guarantees that QA
-data inherits the quality gate.
-
-Examples:
-    # Smoke (1 persona × 1 style)
-    uv run python run_qa_construction.py \
-        --conversations-dir output/rollout_gpt_4o_mini_real_world_us_1240_queires_full/conversations \
-        --output-dir output/qa/v1_demo_smoke \
-        --styles personamem_mcq \
-        --sample 5 --concurrency 2
-
-    # Full pilot (10 personas, all 4 styles)
-    uv run python run_qa_construction.py \
-        --conversations-dir output/rollout_gpt_4o_mini_real_world_us_1240_queires_full/conversations \
-        --qc-results output/qc/v1_demo/qc_results.jsonl \
-        --output-dir output/qa/v1_demo \
-        --styles personamem_mcq prefeval_gen bigtom_tom lamp_cls \
-        --concurrency 40
-
-    # PersonaMem-only with self-consistency QC
-    uv run python run_qa_construction.py \
-        --conversations-dir output/.../conversations \
-        --output-dir output/qa/v1_demo \
-        --styles personamem_mcq \
-        --self-consistency-qc \
-        --concurrency 40
-"""
+"""Construct personalized QA-format SFT data from existing conversation JSONs."""
 
 from __future__ import annotations
 
