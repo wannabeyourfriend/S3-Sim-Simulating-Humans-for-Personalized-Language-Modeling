@@ -14,7 +14,7 @@ dynamics, beliefs, and evolving social relationships. Unlike naïve
 scaling strategies, our approach uses these evolving user states as continuous constraints to guide generation, ensuring that the synthesized dialogues reflect realistic causal depth rather than
 surface-level mimicry. Experiments show that models fine-tuned on our data exhibit superior sample efficiency and significantly improved capabilities in intention inference and theory-of-mind reasoning compared to baselines.
 
-### Repository layout
+### Codebase layout
 
 ```
 .
