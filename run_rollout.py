@@ -1,24 +1,11 @@
-"""Rollout 1240 conversations from rewritten prompts JSONL.
-Reads data/original_rewritten_selected_prompts_us.jsonl, loads the matching
-persona for each line, and runs rollout_conversation with the rewritten prompt
-as starting point. Results are streamed to disk (conversation JSON + SFT JSONL).
-Usage:
-    uv run python run_rollout.py
-    uv run python run_rollout.py --ablation full --concurrency 80
-    uv run python run_rollout.py --ablation full --concurrency 80 --max-prompts 10
-    uv run python run_rollout.py --ablation full --persona-ids profile_462 --max-prompts 5
-"""
-
+"""Rollout conversations from rewritten prompts JSONL. `uv run python run_rollout.py --ablation full --persona-ids profile_462 --max-prompts 5` """    
 import argparse, asyncio, json, logging
 from pathlib import Path
-
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
-
 ROOT = Path(__file__).resolve().parent
 PROMPTS_JSONL = ROOT / "data" / "rewritten_prompts" / "original_rewritten_selected_prompts_us.jsonl"
 PROFILES_DIR = ROOT / "data" / "filterd_refined_profiles" / "summary_refined_profiles_us.jsonl"
-
 
 def load_prompt_lines(
     path: Path, persona_ids: set[str] | None = None, max_prompts: int | None = None
