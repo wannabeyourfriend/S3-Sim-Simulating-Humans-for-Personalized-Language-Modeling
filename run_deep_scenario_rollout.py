@@ -1,18 +1,4 @@
-"""Rollout deeply-personal conversations from per-persona scenarios.
-
-Instead of reusing prompts from an existing dataset (see run_rollout.py), this
-script constructs scenarios on-the-fly with the
-`simulator_lifelong_scenario_constructor` prompt for each persona, then rolls
-out a conversation per scenario.
-
-Scenarios are cached per persona at data/deep_scenarios/{persona_id}.json so
-reruns skip the construction step.
-
-Usage:
-    uv run python run_deep_scenario_rollout.py
-    uv run python run_deep_scenario_rollout.py --ablation full --concurrency 40
-    uv run python run_deep_scenario_rollout.py --persona-ids profile_259 --max-scenarios 5
-"""
+"""Rollout deeply personal conversations from per-persona scenarios. """
 
 import argparse, asyncio, json, logging
 from pathlib import Path
