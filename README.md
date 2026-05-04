@@ -14,39 +14,6 @@ dynamics, beliefs, and evolving social relationships. Unlike naïve
 scaling strategies, our approach uses these evolving user states as continuous constraints to guide generation, ensuring that the synthesized dialogues reflect realistic causal depth rather than
 surface-level mimicry. Experiments show that models fine-tuned on our data exhibit superior sample efficiency and significantly improved capabilities in intention inference and theory-of-mind reasoning compared to baselines.
 
-### Codebase layout
-
-```
-.
-├── user_simulator/                 
-│   ├── oracle.py                                          
-│   ├── prompts/
-│   ├── simulator/               
-│   │   ├── rollout.py           
-│   │   ├── user_turn.py         
-│   │   ├── parsing.py           
-│   │   ├── persona_block.py     
-│   │   └── behavior/         
-│   └── qc/
-├── training/                    # unsloth sft_trainer submodule
-│   ├── sft_trainer.py           
-│   ├── configs/                 
-│   └── scripts/                 
-├── evaluations/                 # personalization benchmarks collection submodule
-│   └── multibench/benchmarks/   
-├── data/                        # artifacts data for conversational rollouts
-│   ├── filterd_refined_profiles/
-│   ├── initial_prompts/
-│   ├── rewritten_prompts/
-│   └── behavior_modes/
-├── run_rollout.py               
-├── run_deep_scenario_rollout.py
-├── run_qc.py
-├── run_qa_construction.py
-├── run_qa_rewrite.py            
-└── run_eval_qa.py            
-```
-
 ### Installation
 
 ```bash
@@ -95,6 +62,39 @@ Run any benchmark
 git submodule update --init evaluations
 pip install -e evaluations
 multibench run personamem -- --api-base <server_endpoint> --model <run_name> --workers 64 --output-dir results/<run_name>/PersonaMem
+```
+
+### Codebase layout
+
+```
+.
+├── user_simulator/                 
+│   ├── oracle.py                                          
+│   ├── prompts/
+│   ├── simulator/               
+│   │   ├── rollout.py           
+│   │   ├── user_turn.py         
+│   │   ├── parsing.py           
+│   │   ├── persona_block.py     
+│   │   └── behavior/         
+│   └── qc/
+├── training/                    # unsloth sft_trainer submodule
+│   ├── sft_trainer.py           
+│   ├── configs/                 
+│   └── scripts/                 
+├── evaluations/                 # personalization benchmarks collection submodule
+│   └── multibench/benchmarks/   
+├── data/                        # artifacts data for conversational rollouts
+│   ├── filterd_refined_profiles/
+│   ├── initial_prompts/
+│   ├── rewritten_prompts/
+│   └── behavior_modes/
+├── run_rollout.py               
+├── run_deep_scenario_rollout.py
+├── run_qc.py
+├── run_qa_construction.py
+├── run_qa_rewrite.py            
+└── run_eval_qa.py            
 ```
 
 ### Citation
