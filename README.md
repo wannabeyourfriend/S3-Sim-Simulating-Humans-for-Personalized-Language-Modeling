@@ -1,9 +1,9 @@
 # Mind2Dialogue: State-Aware User Simulation for Theory-of-Mind and Personalization
 
-<img width="1672" height="941" alt="ChatGPT Image May 4, 2026 at 01_43_49 AM" src="https://github.com/user-attachments/assets/0f0cc782-b792-4738-b4fc-2ab163300da7" />
-
 [![Paper](https://img.shields.io/badge/arXiv-xxx.svg)](https://arxiv.org/abs/xxxx)
 [![Dataset](https://img.shields.io/badge/HuggingFace-xxx.svg)](https://huggingface.co/datasets/wannabeyourfriend-hf/mind2dialogue)
+
+![idea-promotion](assets/idea-promotion.png)
 
 🚨 **[Abstract]** Developing Large Language Models capable of true personalization remains a significant challenge, primarily due to the scarcity of high-quality, private personalized conversation data. Existing approaches rely on publicly available internet data, which suffers from
 severe distribution shifts, or synthetic data generated from static personas, which fail to capture the dynamic causal structure of
