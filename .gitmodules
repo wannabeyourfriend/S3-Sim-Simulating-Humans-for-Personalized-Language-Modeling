@@ -1,6 +1,6 @@
 [submodule "training"]
 	path = training
-	url = https://github.com/wannabeyourfriend/p13n-training
+	url = https://github.com/wannabeyourfriend/p13n-training.git
 	branch = main
 [submodule "evaluations"]
 	path = evaluations
